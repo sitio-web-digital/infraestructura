@@ -1,0 +1,103 @@
+name: Terraform plan
+
+# Corre en cada PR que toque terraform/ (nunca aplica nada, solo muestra qué
+# cambiaría) y también se puede disparar a mano para revisar el estado
+# actual sin abrir un PR.
+on:
+  pull_request:
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform-plan.yml"
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write # necesario para pedir el token OIDC (ver terraform/ci.tf)
+  contents: read
+  pull-requests: write # para comentar el plan en el PR
+
+concurrency:
+  group: terraform-sitiowebdigital
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: sa-east-1
+  TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  TF_VAR_allowed_ssh_cidrs: ${{ secrets.ALLOWED_SSH_CIDRS }} # ej. ["200.45.12.8/32"]
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    # Corre en un runner de GitHub, NO en el self-hosted de la propia
+    # infraestructura que este mismo pipeline administra — así un
+    # apply/destroy que reconfigure o baje esa instancia nunca puede tirar
+    # abajo al runner que lo está ejecutando.
+    defaults:
+      run:
+        working-directory: terraform
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar credenciales de AWS (OIDC, sin access key)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.10"
+
+      - name: terraform fmt -check
+        run: terraform fmt -check -recursive
+        continue-on-error: true # avisa pero no bloquea el plan
+
+      - name: terraform init
+        run: terraform init
+
+      - name: terraform validate
+        run: terraform validate
+
+      - name: terraform plan
+        id: plan
+        run: |
+          terraform plan -no-color -input=false -out=tfplan 2>&1 | tee plan_output.txt
+        continue-on-error: true
+
+      - name: Guardar la salida del plan para el comentario del PR
+        id: plan_output
+        run: |
+          {
+            echo 'plan<<PLAN_EOF'
+            tail -c 60000 plan_output.txt
+            echo 'PLAN_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Comentar el plan en el PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const output = `#### Terraform Plan 📖
+            <details><summary>Ver el plan completo</summary>
+
+            \`\`\`
+            ${{ steps.plan_output.outputs.plan }}
+            \`\`\`
+
+            </details>
+
+            *Disparado por @${{ github.actor }} en \`${{ github.workflow }}\`*`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+      - name: Fallar si el plan falló
+        if: steps.plan.outcome == 'failure'
+        run: exit 1

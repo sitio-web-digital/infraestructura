@@ -1,12 +1,13 @@
-# --- Terraform ---
-terraform/.terraform/
-terraform/.terraform.tfstate.lock.info
-terraform/terraform.tfstate
-terraform/terraform.tfstate.backup
-terraform/*.tfvars
+# --- Terraform --- (patrones sin anclar al principio: cubren tanto
+# terraform/ como terraform/bootstrap/, cualquier profundidad)
+**/.terraform/
+**/.terraform.tfstate.lock.info
+**/terraform.tfstate
+**/terraform.tfstate.backup
+**/*.tfvars
 !terraform/terraform.tfvars.example
-terraform/*.tfplan
-terraform/crash.log
+**/*.tfplan
+**/crash.log
 
 # --- Ansible ---
 ansible/inventory/hosts.ini

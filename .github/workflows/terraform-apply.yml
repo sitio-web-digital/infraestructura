@@ -1,0 +1,71 @@
+name: Terraform apply
+
+# Aplica la infraestructura de verdad. Dispara solo con push a main (después
+# de mergear un PR ya revisado por terraform-plan.yml) o a mano — nunca en
+# PRs, para que nadie aplique algo sin pasar por revisión.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform-apply.yml"
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Escribí "apply" para confirmar'
+        required: true
+
+permissions:
+  id-token: write # necesario para pedir el token OIDC (ver terraform/ci.tf)
+  contents: read
+
+concurrency:
+  group: terraform-sitiowebdigital
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: sa-east-1
+  TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  TF_VAR_cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+  TF_VAR_allowed_ssh_cidrs: ${{ secrets.ALLOWED_SSH_CIDRS }} # ej. ["200.45.12.8/32"]
+
+jobs:
+  apply:
+    if: github.event_name == 'push' || github.event.inputs.confirm == 'apply'
+    runs-on: ubuntu-latest
+    # Mismo motivo que en terraform-plan.yml: corre en un runner de GitHub,
+    # nunca en el self-hosted que vive DENTRO de la infraestructura que este
+    # workflow puede recrear o destruir.
+    #
+    # `environment: production` deja este job listo para pedir aprobación
+    # manual antes de correr — activalo en Settings > Environments >
+    # production > Required reviewers del repo, así un push a main no
+    # aplica solo, alguien tiene que confirmar primero.
+    environment: production
+    defaults:
+      run:
+        working-directory: terraform
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar credenciales de AWS (OIDC, sin access key)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.10"
+
+      - name: terraform init
+        run: terraform init
+
+      - name: terraform apply
+        run: terraform apply -auto-approve -input=false
+
+      - name: Mostrar los outputs (sin los sensibles)
+        run: terraform output

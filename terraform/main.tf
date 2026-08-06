@@ -46,17 +46,20 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-resource "aws_key_pair" "this" {
-  key_name   = "${local.name}-key"
-  public_key = file(var.ssh_public_key_path)
-  tags       = local.common_tags
+# El key pair NO lo crea Terraform — se generó una sola vez con
+# `aws ec2 create-key-pair` (ver README.md > "Acceso SSH") para poder bajar
+# la clave privada (.pem) apenas se crea. Si Terraform lo manejara como
+# recurso, la clave privada no sale nunca de la API de AWS y no habría
+# forma de bajarla — por eso acá solo lo referenciamos por nombre.
+data "aws_key_pair" "this" {
+  key_name = var.key_pair_name
 }
 
 resource "aws_instance" "app" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
   subnet_id              = data.aws_subnets.default.ids[0]
-  key_name               = aws_key_pair.this.key_name
+  key_name               = data.aws_key_pair.this.key_name
   vpc_security_group_ids = [aws_security_group.app.id]
   iam_instance_profile   = aws_iam_instance_profile.app.name
 

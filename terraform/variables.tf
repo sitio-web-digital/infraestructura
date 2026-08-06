@@ -20,6 +20,18 @@ variable "environment" {
   default     = "prod"
 }
 
+variable "github_repo" {
+  description = "Repo de GitHub (formato owner/nombre) autorizado a asumir el rol de CI vía OIDC — ver ci.tf."
+  type        = string
+  default     = "sitio-web-digital/infraestructura-sitio-web-digital-"
+}
+
+variable "tfstate_bucket_name" {
+  description = "Bucket S3 del estado remoto (lo crea terraform/bootstrap/, no este módulo) — el rol de CI necesita permiso sobre él para poder leer/escribir el estado."
+  type        = string
+  default     = "sitiowebdigital-tfstate-269478442857"
+}
+
 variable "instance_type" {
   description = "Tipo de instancia EC2. t3.medium (4 GB RAM) por defecto: corre Postgres + backend Node + nginx + un runner de GitHub Actions + 2 túneles de Cloudflare a la vez, t3.small (2 GB) queda muy justo."
   type        = string
@@ -32,9 +44,10 @@ variable "root_volume_size_gb" {
   default     = 30
 }
 
-variable "ssh_public_key_path" {
-  description = "Ruta local a tu clave pública SSH (ej. ~/.ssh/id_ed25519.pub). Terraform la sube a AWS como key pair — la privada nunca sale de tu máquina ni pasa por acá."
+variable "key_pair_name" {
+  description = "Nombre del key pair de EC2 YA CREADO en AWS (ver README.md > \"Acceso SSH\" — se crea una sola vez con `aws ec2 create-key-pair` para poder bajar el .pem, Terraform no lo administra)."
   type        = string
+  default     = "sitiowebdigital-prod"
 }
 
 variable "allowed_ssh_cidrs" {

@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.5.0"
+  required_version = ">= 1.10.0" # el backend S3 usa el locking nativo (use_lockfile), sin DynamoDB
 
   required_providers {
     aws = {
@@ -16,10 +16,20 @@ terraform {
     }
   }
 
-  # Estado local por defecto (terraform.tfstate en esta carpeta, ver
-  # .gitignore) — para un equipo de más de una persona conviene migrarlo a
-  # un backend remoto (ej. S3 + DynamoDB para el lock). Ver README.md,
-  # sección "Backend remoto de estado".
+  # Estado remoto en S3 — el bucket lo crea terraform/bootstrap/ (se corre
+  # una sola vez, a mano, antes de esto — ver README.md "Backend remoto de
+  # estado"). Necesario para que terraform-apply.yml pueda correr desde
+  # GitHub Actions: cada corrida de CI arranca sin nada en disco, así que el
+  # estado tiene que vivir en otro lado o cada apply "olvida" lo que ya
+  # existe. use_lockfile evita que dos applies pisen el estado al mismo
+  # tiempo sin necesitar una tabla de DynamoDB aparte (Terraform >= 1.10).
+  backend "s3" {
+    bucket       = "sitiowebdigital-tfstate-269478442857"
+    key          = "sitiowebdigital/terraform.tfstate"
+    region       = "sa-east-1"
+    encrypt      = true
+    use_lockfile = true
+  }
 }
 
 provider "aws" {
