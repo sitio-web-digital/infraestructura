@@ -1,0 +1,22 @@
+# Copiá este archivo a terraform.tfvars (gitignoreado) y completá los
+# valores reales. NUNCA subas terraform.tfvars a git.
+
+# --- AWS ---
+ssh_public_key_path = "~/.ssh/id_ed25519.pub"
+allowed_ssh_cidrs    = ["TU.IP.PUBLICA.AQUI/32"]
+
+# aws_region     = "sa-east-1"          # default, descomentar solo para cambiarlo
+# instance_type  = "t3.medium"          # default
+# s3_bucket_name = "sitiowebdigital-media"
+
+# --- Cloudflare ---
+# API Token: dash.cloudflare.com > My Profile > API Tokens > Create Token,
+# con permisos "Account > Cloudflare Tunnel > Edit" (y "Zone > DNS > Edit"
+# solo si vas a poner manage_dns = true).
+cloudflare_api_token   = "pon-tu-token-aca"
+cloudflare_account_id  = "pon-tu-account-id-aca"
+
+# Dejar en false hasta confirmar que el registro wildcard no pisa otro
+# proyecto en la zona compartida cloudfordeploy.com — ver cloudflare.tf.
+# manage_dns        = false
+# cloudflare_zone_id = "pon-el-zone-id-aca"

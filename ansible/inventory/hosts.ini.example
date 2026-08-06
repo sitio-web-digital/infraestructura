@@ -1,0 +1,7 @@
+# Generado automáticamente por scripts/generate-inventory.sh a partir de
+# `terraform output -raw public_ip` — no lo edites a mano, correlo de nuevo
+# si la IP cambia. Este .example queda como referencia de formato; el
+# hosts.ini real (gitignoreado, ver .gitignore) es el que usa Ansible.
+
+[sitiowebdigital]
+app ansible_host=REEMPLAZAR_CON_LA_IP_PUBLICA ansible_user=ubuntu

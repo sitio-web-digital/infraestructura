@@ -1,0 +1,43 @@
+# Copiá este archivo a group_vars/vault.yml, completá los valores reales, y
+# encriptalo con:
+#
+#   ansible-vault encrypt group_vars/vault.yml
+#
+# group_vars/vault.yml (ya encriptado) SÍ se sube al repo — es justamente lo
+# que hace a esto reproducible en otra máquina. Lo que nunca se sube es el
+# archivo .vault_pass (la contraseña que lo abre) ni este .example con
+# valores de ejemplo reemplazados por reales sin encriptar.
+
+# --- Runner de GitHub Actions ---
+# Personal Access Token (classic) con scope "admin:org" (para un runner de
+# organización) — se usa una sola vez, al momento de registrar el runner,
+# para pedirle a la API de GitHub un token de registro de corta duración.
+# Generalo en https://github.com/settings/tokens, y una vez que el runner
+# esté registrado y andando podés revocarlo (Ansible no lo vuelve a usar
+# salvo que reinstales el runner desde cero).
+vault_github_runner_pat: "pon-tu-PAT-aca"
+
+# --- Postgres ---
+vault_db_password: "generá-una-contraseña-fuerte-aca"
+
+# --- Backend: JWT ---
+# Generar con: openssl rand -base64 48
+vault_jwt_secret: "generá-un-secret-random-fuerte-aca"
+
+# --- Mercado Pago (server/src/utils/mercadopago.js) ---
+# https://www.mercadopago.com.ar/developers/panel > Tus integraciones
+vault_mp_access_token: ""
+vault_mp_webhook_secret: ""
+vault_mp_preapproval_plan_id: ""
+
+# --- Cloudflare (para automatización de DNS FUTURA del backend — no es lo
+#     mismo que el token que usa terraform/ para crear los túneles, aunque
+#     puede ser el mismo token si le das los dos permisos) ---
+vault_cloudflare_api_token: ""
+vault_cloudflare_zone_id: ""
+vault_cloudflare_account_id: ""
+
+# --- Tokens de los túneles (salen de `terraform output`, ver
+#     scripts/fetch-tunnel-tokens.sh — no los escribas a mano) ---
+vault_cloudflare_tunnel_token_frontend: ""
+vault_cloudflare_tunnel_token_api: ""

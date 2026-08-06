@@ -1,0 +1,68 @@
+---
+# Instalación oficial de Docker Engine (docs.docker.com/engine/install/ubuntu)
+# — el mismo Docker que ya usan los dos workflows de deploy (`docker build`,
+# `docker run`, `docker compose`).
+
+- name: Quitar paquetes viejos de Docker que puedan chocar
+  ansible.builtin.apt:
+    name:
+      - docker.io
+      - docker-doc
+      - docker-compose
+      - podman-docker
+      - containerd
+      - runc
+    state: absent
+
+- name: Crear /etc/apt/keyrings
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Descargar la clave GPG oficial de Docker
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: "0644"
+
+- name: Agregar el repositorio de Docker
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [arch={{ 'amd64' if ansible_architecture == 'x86_64' else ansible_architecture }}
+      signed-by=/etc/apt/keyrings/docker.asc]
+      https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+    state: present
+    filename: docker
+
+- name: Instalar Docker Engine + plugin de compose
+  ansible.builtin.apt:
+    update_cache: true
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+
+- name: Habilitar y arrancar Docker
+  ansible.builtin.systemd:
+    name: docker
+    enabled: true
+    state: started
+
+# El runner de GitHub Actions ejecuta `docker build` / `docker run` como el
+# usuario github_runner_user — necesita existir y estar en el grupo docker
+# para poder hablarle al socket sin sudo, igual que en el runner original.
+# Se crea acá (no en roles/github_runner) para no depender del orden entre
+# roles — si ya existe (porque este playbook corrió antes), este task es un
+# no-op idempotente.
+- name: Crear el usuario del runner y sumarlo al grupo docker
+  ansible.builtin.user:
+    name: "{{ github_runner_user }}"
+    system: true
+    shell: /bin/bash
+    create_home: true
+    groups: docker
+    append: true

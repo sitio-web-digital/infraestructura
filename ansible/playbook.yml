@@ -1,0 +1,30 @@
+---
+# Deja un servidor nuevo (provisto por terraform/) con exactamente lo mismo
+# que tenía el runner viejo: Docker, Postgres (docker-compose), el runner de
+# GitHub Actions (nivel organización) y los dos túneles de Cloudflare. Los
+# workflows de deploy de cada repo (deploy-frontend.yml / deploy-backend.yml)
+# hacen el resto en cada push a develop — este playbook no construye ni
+# corre las imágenes de la app, solo prepara la máquina para que el runner
+# pueda hacerlo.
+#
+# Uso: ver README.md, sección "Bootstrap de punta a punta".
+
+- name: Preparar el servidor de SitioWeb Digital
+  hosts: sitiowebdigital
+  become: true
+
+  pre_tasks:
+    - name: Esperar a que la instancia responda por SSH
+      ansible.builtin.wait_for_connection:
+        timeout: 180
+
+    - name: Recolectar facts
+      ansible.builtin.setup:
+
+  roles:
+    - common
+    - docker
+    - postgres
+    - github_runner
+    - cloudflared
+    - backend_env

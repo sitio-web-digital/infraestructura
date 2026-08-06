@@ -1,0 +1,72 @@
+---
+# "Los dos túneles" — cada uno es su propio servicio systemd
+# (cloudflared-frontend, cloudflared-api), con su propio token (creados por
+# Terraform, ver terraform/cloudflare.tf y outputs.tf). Ninguno necesita el
+# viejo flujo de `cloudflared tunnel login` + credentials.json: los túneles
+# creados con un token (Terraform o el dashboard de Zero Trust) se corren
+# directo con `cloudflared tunnel run --token`.
+
+- name: Descargar el paquete .deb de cloudflared
+  ansible.builtin.get_url:
+    url: "https://github.com/cloudflare/cloudflared/releases/download/{{ cloudflared_version }}/cloudflared-linux-amd64.deb"
+    dest: "/tmp/cloudflared-{{ cloudflared_version }}.deb"
+    mode: "0644"
+
+- name: Instalar cloudflared
+  ansible.builtin.apt:
+    deb: "/tmp/cloudflared-{{ cloudflared_version }}.deb"
+
+- name: Crear el usuario de sistema para los túneles
+  ansible.builtin.user:
+    name: cloudflared
+    system: true
+    shell: /usr/sbin/nologin
+    create_home: false
+
+- name: Crear el directorio de configuración
+  ansible.builtin.file:
+    path: "{{ cloudflared_config_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Escribir el archivo de token de cada túnel (0600, solo root lo lee)
+  ansible.builtin.template:
+    src: tunnel.env.j2
+    dest: "{{ cloudflared_config_dir }}/{{ item.name }}.env"
+    owner: root
+    group: root
+    mode: "0600"
+  loop: "{{ cloudflared_tunnels }}"
+  loop_control:
+    label: "{{ item.name }}"
+  no_log: true
+  vars:
+    tunnel_token: "{{ item.token }}"
+
+- name: Escribir la unidad systemd de cada túnel
+  ansible.builtin.template:
+    src: cloudflared.service.j2
+    dest: "/etc/systemd/system/cloudflared-{{ item.name }}.service"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: "{{ cloudflared_tunnels }}"
+  loop_control:
+    label: "{{ item.name }}"
+  vars:
+    tunnel_name: "{{ item.name }}"
+
+- name: Habilitar y (re)arrancar cada túnel
+  ansible.builtin.systemd:
+    name: "cloudflared-{{ item.name }}.service"
+    enabled: true
+    # Reinicia siempre, no solo si estaba parado — así una corrida del
+    # playbook que trae un token nuevo (rotación) lo aplica sin un paso
+    # manual aparte. cloudflared reconecta en un par de segundos.
+    state: restarted
+    daemon_reload: true
+  loop: "{{ cloudflared_tunnels }}"
+  loop_control:
+    label: "{{ item.name }}"

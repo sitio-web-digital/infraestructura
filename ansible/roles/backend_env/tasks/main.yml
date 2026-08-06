@@ -1,0 +1,17 @@
+---
+- name: Crear {{ app_root }}
+  ansible.builtin.file:
+    path: "{{ app_root }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Generar {{ backend_env_path }}
+  ansible.builtin.template:
+    src: backend.env.j2
+    dest: "{{ backend_env_path }}"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true

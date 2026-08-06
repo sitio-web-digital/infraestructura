@@ -1,0 +1,52 @@
+---
+# init.sql (docker-entrypoint-initdb.d) solo corre la PRIMERA vez que el
+# volumen de datos está vacío — en cualquier corrida siguiente del
+# playbook, Postgres ya tiene datos y este archivo se ignora por completo.
+# Sirve para arrancar un servidor NUEVO con el schema de cero; NO migra los
+# datos reales del servidor viejo que se rompió — eso es un paso aparte
+# (pg_dump del viejo si todavía hay acceso / o backups, y pg_restore acá).
+# Ver README.md > "Migrar los datos del servidor anterior".
+
+- name: Copiar docker-compose.yml de la base de datos
+  ansible.builtin.copy:
+    src: db/docker-compose.yml
+    dest: "{{ db_compose_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+  register: db_compose_file
+
+- name: Copiar el snapshot de init.sql (solo importa en el primer arranque)
+  ansible.builtin.copy:
+    src: db/init.sql
+    dest: "{{ db_compose_dir }}/init.sql"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Generar db/.env con las credenciales (no queda en el docker-compose.yml)
+  ansible.builtin.template:
+    src: db.env.j2
+    dest: "{{ db_compose_dir }}/.env"
+    owner: root
+    group: root
+    mode: "0600"
+  register: db_env_file
+
+- name: Levantar (o recrear) el contenedor de Postgres
+  community.docker.docker_compose_v2:
+    project_src: "{{ db_compose_dir }}"
+    state: present
+    pull: missing
+  register: db_compose_up
+
+- name: Esperar a que Postgres esté healthy
+  ansible.builtin.command:
+    cmd: >-
+      docker inspect --format='{{ '{{' }}.State.Health.Status{{ '}}' }}'
+      sitiowebdigital-db
+  register: db_health
+  changed_when: false
+  until: db_health.stdout == "healthy"
+  retries: 12
+  delay: 5

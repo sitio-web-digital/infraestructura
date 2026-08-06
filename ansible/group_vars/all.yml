@@ -1,0 +1,44 @@
+# Valores NO sensibles — van al repo tal cual. Los secretos viven en
+# group_vars/vault.yml (encriptado con ansible-vault, ver README.md).
+
+# --- Runner de GitHub Actions ---
+github_org: sitio-web-digital
+github_runner_version: "2.321.0" # revisar la última en https://github.com/actions/runner/releases
+github_runner_labels: "self-hosted,linux,x64,aws"
+github_runner_user: github-runner
+github_runner_home: /opt/actions-runner
+
+# --- Rutas en el servidor ---
+app_root: /opt/sitioweb
+db_compose_dir: "{{ app_root }}/db"
+backend_env_path: "{{ app_root }}/backend.env" # mismo path que espera server/.github/workflows/deploy-backend.yml
+cloudflared_config_dir: /etc/cloudflared
+
+# --- Puertos (coinciden con los workflows de deploy de cada repo) ---
+backend_port: 4000
+frontend_host_port: 8081
+db_host_port: 5435
+
+# --- Postgres (nombre de usuario/DB — la contraseña va en el vault) ---
+db_user: sitioweb
+db_name: sitioweb_digital
+
+# --- AWS (el backend usa el rol de la instancia, no access keys — ver
+#     terraform/iam.tf) ---
+aws_region: sa-east-1
+s3_bucket_name: sitiowebdigital-media
+cloudfront_domain: d38e2ri338t20n.cloudfront.net
+
+# --- cloudflared ---
+cloudflared_version: "2024.10.0" # revisar la última en https://github.com/cloudflare/cloudflared/releases
+
+# Los dos túneles — el token de cada uno sale del vault (ver
+# group_vars/vault.yml.example y scripts/fetch-tunnel-tokens.sh). "frontend"
+# apunta a nginx (:{{ frontend_host_port }}), "api" al backend Node
+# (:{{ backend_port }}) — ver terraform/cloudflare.tf para el ingress de
+# cada uno.
+cloudflared_tunnels:
+  - name: frontend
+    token: "{{ vault_cloudflare_tunnel_token_frontend }}"
+  - name: api
+    token: "{{ vault_cloudflare_tunnel_token_api }}"

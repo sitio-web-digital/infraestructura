@@ -1,0 +1,21 @@
+[Unit]
+Description=Cloudflare Tunnel ({{ tunnel_name }})
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=cloudflared
+# El token vive en un archivo aparte con permisos 0600 (ver
+# {{ cloudflared_config_dir }}/{{ tunnel_name }}.env), no acá — las unidades
+# de systemd bajo /etc/systemd/system/ suelen ser legibles por cualquier
+# usuario local (`systemctl cat` las muestra enteras), así que ponerlo
+# directo en ExecStart lo dejaría expuesto a cualquiera con una sesión en
+# la máquina.
+EnvironmentFile={{ cloudflared_config_dir }}/{{ tunnel_name }}.env
+ExecStart=/usr/bin/cloudflared --no-autoupdate tunnel run --token ${TUNNEL_TOKEN}
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,21 @@
+# --- Terraform ---
+terraform/.terraform/
+terraform/.terraform.tfstate.lock.info
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/*.tfvars
+!terraform/terraform.tfvars.example
+terraform/*.tfplan
+terraform/crash.log
+
+# --- Ansible ---
+ansible/inventory/hosts.ini
+ansible/.vault_pass
+ansible/group_vars/vault.yml
+!ansible/group_vars/vault.yml.example
+ansible/*.retry
+
+# --- General ---
+.DS_Store
+*.pem
+*.log

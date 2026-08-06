@@ -1,0 +1,64 @@
+---
+- name: Actualizar el índice de paquetes
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Actualizar paquetes instalados
+  ansible.builtin.apt:
+    upgrade: safe
+
+- name: Instalar paquetes base
+  ansible.builtin.apt:
+    name:
+      - curl
+      - ca-certificates
+      - gnupg
+      - unzip
+      - jq
+      - ufw
+      - unattended-upgrades
+      - fail2ban
+    state: present
+
+- name: Crear /opt/sitioweb y subcarpetas
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - "{{ app_root }}"
+    - "{{ db_compose_dir }}"
+
+# UFW de respaldo, además del Security Group de AWS — misma regla (solo
+# SSH), pero conviene tenerla también en el propio host por si alguna vez
+# corre fuera de AWS (justo el objetivo de este repo: "poder replicarlo en
+# cualquier lado").
+- name: Permitir SSH en UFW
+  community.general.ufw:
+    rule: allow
+    port: "22"
+    proto: tcp
+
+- name: Habilitar UFW
+  community.general.ufw:
+    state: enabled
+    policy: deny
+
+- name: Habilitar actualizaciones de seguridad desatendidas
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Habilitar y arrancar fail2ban
+  ansible.builtin.systemd:
+    name: fail2ban
+    enabled: true
+    state: started
