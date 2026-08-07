@@ -148,6 +148,7 @@ data "aws_iam_policy_document" "github_actions" {
       "iam:AttachRolePolicy",
       "iam:DetachRolePolicy",
       "iam:ListAttachedRolePolicies",
+      "iam:ListRolePolicies", # el provider de AWS la pide para detectar drift de políticas INLINE (ver aws_iam_role_policy.github_actions)
       "iam:ListInstanceProfilesForRole",
       "iam:GetInstanceProfile",
       "iam:CreateInstanceProfile",
@@ -184,10 +185,13 @@ data "aws_iam_policy_document" "github_actions" {
   }
 
   # Estado remoto de Terraform (el bucket lo crea terraform/bootstrap/, no
-  # este rol).
+  # este rol). DeleteObject hace falta para soltar el lock nativo de S3
+  # (use_lockfile crea un objeto "*.tflock" y lo borra al terminar) — sin
+  # este permiso, un apply que sí termina bien igual falla al final
+  # intentando liberar el lock, y lo deja trabado para la próxima corrida.
   statement {
     sid       = "TerraformStateBucket"
-    actions   = ["s3:GetObject", "s3:PutObject", "s3:ListBucket"]
+    actions   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"]
     resources = ["arn:aws:s3:::${var.tfstate_bucket_name}", "arn:aws:s3:::${var.tfstate_bucket_name}/*"]
   }
 }

@@ -35,9 +35,13 @@ data "aws_ami" "ubuntu" {
   most_recent = true
   owners      = ["099720109477"] # Canonical
 
+  # "hvm-ssd" (no "-gp3") es el naming real que usa Canonical hoy en
+  # sa-east-1 para 22.04 — confirmado con
+  # `aws ec2 describe-images --owners 099720109477 --filters Name=name,...`
+  # después de que el primer apply fallara acá con "no results".
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-jammy-22.04-amd64-server-*"]
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
   }
 
   filter {
