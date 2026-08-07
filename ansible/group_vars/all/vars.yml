@@ -33,6 +33,12 @@ aws_region: sa-east-1
 s3_bucket_name: sitiowebdigital-media
 cloudfront_domain: d38e2ri338t20n.cloudfront.net
 
+# --- Mercado Pago ---
+# URL base del frontend — arma el back_url de cada suscripción
+# (.../#/suscripcion/confirmar, ver server/src/routes/subscription.js). Es
+# el mismo hostname que app_hostname en terraform/variables.tf.
+app_url: "https://sitiowebdigital.cloudfordeploy.com"
+
 # --- cloudflared ---
 cloudflared_version: "2024.10.0" # revisar la última en https://github.com/cloudflare/cloudflared/releases
 
