@@ -7,11 +7,18 @@
     group: root
     mode: "0755"
 
+# `docker run --env-file` lo lee el CLIENTE de docker (el proceso
+# `docker run` en sí, corriendo como github_runner_user vía
+# deploy-backend.yml) — no pasa un path al daemon, así que necesita poder
+# ABRIR el archivo directo, no solo que el daemon (root) pueda leerlo.
+# 0600 root:root rompía justo eso ("permission denied" real en el primer
+# deploy de prueba). group=github_runner_user + 0640 es el mínimo que
+# sigue sin exponerlo a cualquier otro usuario de la máquina.
 - name: Generar {{ backend_env_path }}
   ansible.builtin.template:
     src: backend.env.j2
     dest: "{{ backend_env_path }}"
     owner: root
-    group: root
-    mode: "0600"
+    group: "{{ github_runner_user }}"
+    mode: "0640"
   no_log: true
