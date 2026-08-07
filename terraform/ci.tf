@@ -80,13 +80,31 @@ data "aws_iam_policy_document" "github_actions" {
   }
 
   statement {
-    sid = "Ec2CreateTaggedOnly"
+    # Sin condición de tag a propósito: RunInstances/CreateSecurityGroup/
+    # AllocateAddress no solo piden permiso sobre el recurso NUEVO que
+    # crean (eso sí soporta aws:RequestTag) — EC2 también evalúa el mismo
+    # permiso contra los recursos que ya existen y solo se REFERENCIAN
+    # (la AMI, la subnet, el key pair, la VPC) y esos chequeos no llevan
+    # ningún tag de la request nueva, así que una condición RequestTag acá
+    # los rechaza igual (confirmado con el primer intento real: falló
+    # "CreateSecurityGroup ... on resource: vpc/vpc-xxxx" con exactamente
+    # esta condición puesta). El scope real de esta cuenta sigue acotado
+    # por OTRO lado: nadie más que este repo puede asumir el rol (ver el
+    # trust policy más arriba).
+    sid = "Ec2Create"
     actions = [
       "ec2:RunInstances",
-      "ec2:CreateTags",
-      "ec2:AllocateAddress",
       "ec2:CreateSecurityGroup",
+      "ec2:AllocateAddress",
     ]
+    resources = ["*"]
+  }
+
+  # CreateTags sí soporta la condición sin este problema — el tag va en la
+  # misma request que crea el recurso, no hace falta "referenciar" nada.
+  statement {
+    sid       = "Ec2CreateTagsTaggedOnly"
+    actions   = ["ec2:CreateTags"]
     resources = ["*"]
     condition {
       test     = "StringEquals"
