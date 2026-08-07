@@ -12,8 +12,8 @@
 # --- Ansible ---
 ansible/inventory/hosts.ini
 ansible/.vault_pass
-ansible/group_vars/vault.yml
-!ansible/group_vars/vault.yml.example
+ansible/group_vars/all/vault.yml
+!ansible/group_vars/all/vault.yml.example
 ansible/*.retry
 
 # --- General ---

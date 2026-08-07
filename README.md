@@ -33,8 +33,9 @@ siguen siendo sus propios repos, con sus propios workflows de deploy
    │   (los dos primeros los levanta el runner en cada deploy;         │
    │    el tercero — Postgres — lo levanta este mismo playbook)        │
    │                                                                   │
-   │   actions.runner.sitio-web-digital.<host>.service                 │
-   │   (un solo runner, nivel organización, atiende a ambos repos)     │
+   │   actions.runner.sitio-web-digital-frontend-....service           │
+   │   actions.runner.sitio-web-digital-backend-....service            │
+   │   (un runner por repo — ver nota sobre membership de la org)      │
    └───────────────────────────────────────────────────────────────────┘
 ```
 
@@ -75,9 +76,16 @@ seguro** que si el servidor original tenía 80/443 abiertos.
   `Account > Cloudflare Tunnel > Edit` (sumá `Zone > DNS > Edit` si vas a
   usar `manage_dns = true`).
 - Un **Personal Access Token de GitHub** (classic) con scope `admin:org`,
-  de alguien con permisos de administrador en la organización
-  `sitio-web-digital` — se usa una sola vez para registrar el runner (ver
-  abajo, se puede revocar después).
+  de alguien con acceso de administrador sobre los dos repos
+  (`frontend-sitio-web-digital` y `backend-sitio-web-digital`) — se usa una
+  sola vez para registrar el runner (ver abajo, se puede revocar después).
+  Registra un runner por REPO, no uno solo a nivel organización — pedir el
+  registro a nivel org (`POST /orgs/{org}/actions/runners/registration-token`)
+  devuelve 404 si la cuenta del token no figura como *miembro* de la
+  organización (tener acceso a los repos como colaborador no alcanza). Si
+  en algún momento esa cuenta pasa a ser miembro de la org, se puede
+  simplificar a un solo runner — ver el comentario en
+  `ansible/roles/github_runner/tasks/main.yml`.
 
 ## Acceso SSH (key pair)
 
@@ -150,17 +158,21 @@ cd ../ansible
 ### 3. Completar los secretos (Ansible Vault)
 
 ```bash
-cp group_vars/vault.yml.example group_vars/vault.yml
-# completá group_vars/vault.yml: el PAT del runner, la contraseña de
+cp group_vars/all/vault.yml.example group_vars/all/vault.yml
+# completá group_vars/all/vault.yml: el PAT del runner, la contraseña de
 # Postgres, el JWT secret (openssl rand -base64 48), Mercado Pago, etc.
 
 ./scripts/fetch-tunnel-tokens.sh   # copia los tokens de los túneles desde `terraform output`
 
-ansible-vault encrypt group_vars/vault.yml
+ansible-vault encrypt group_vars/all/vault.yml
 echo "tu-contraseña-del-vault" > .vault_pass && chmod 600 .vault_pass
 ```
 
-`group_vars/vault.yml` ya encriptado SÍ va al repo (es justamente lo que
+Nota: tiene que vivir en `group_vars/all/` (no `group_vars/` a secas) — Ansible
+solo auto-carga `group_vars/all.yml` o una carpeta `group_vars/all/` completa,
+no cualquier archivo suelto ahí adentro.
+
+`group_vars/all/vault.yml` ya encriptado SÍ va al repo (es justamente lo que
 permite reproducir esto en otra máquina) — `.vault_pass` (la contraseña que
 lo abre) NUNCA. Guardala en un gestor de contraseñas del equipo.
 
@@ -226,7 +238,7 @@ docker exec -i sitiowebdigital-db pg_restore -U sitioweb -d sitioweb_digital --c
 ## Día a día
 
 - **Cambiar un secreto** (ej. rotar `MP_ACCESS_TOKEN`): editar
-  `group_vars/vault.yml` (`ansible-vault edit group_vars/vault.yml
+  `group_vars/all/vault.yml` (`ansible-vault edit group_vars/all/vault.yml
   --vault-password-file .vault_pass`) y volver a correr
   `ansible-playbook playbook.yml --vault-password-file .vault_pass`.
 - **Agregar acceso SSH a alguien más**: sumar su IP a
@@ -234,11 +246,11 @@ docker exec -i sitiowebdigital-db pg_restore -U sitioweb -d sitioweb_digital --c
   `aws ssm start-session --target <instance-id>` (el rol IAM ya tiene
   `AmazonSSMManagedInstanceCore`, no hace falta abrir el Security Group
   para eso).
-- **Reinstalar el runner desde cero** (ej. cambió el nombre del host):
-  borrar `/opt/actions-runner/.runner` en la máquina y volver a correr el
-  playbook — pero primero sacá el runner viejo (offline) desde la
-  configuración de la organización en GitHub, o `config.sh --unattended`
-  va a fallar si ya existe uno con ese nombre.
+- **Reinstalar un runner desde cero** (ej. cambió el nombre del host):
+  borrar `/opt/actions-runner-<frontend|backend>/.runner` en la máquina y
+  volver a correr el playbook — pero primero sacá el runner viejo (offline)
+  desde Settings > Actions > Runners de ESE repo puntual en GitHub, o
+  `config.sh --unattended` va a fallar si ya existe uno con ese nombre.
 - **Destruir todo**: `cd terraform && terraform destroy` — esto NO borra
   los túneles si tenés registros DNS manuales apuntando a ellos por fuera
   de Terraform; sacalos a mano del dashboard de Cloudflare antes si hace

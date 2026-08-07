@@ -2,7 +2,11 @@
 # group_vars/vault.yml (encriptado con ansible-vault, ver README.md).
 
 # --- Runner de GitHub Actions ---
-github_org: sitio-web-digital
+# Uno por repo (no uno solo a nivel organización) — ver el comentario en
+# roles/github_runner/tasks/main.yml para el porqué.
+github_runner_repos:
+  - sitio-web-digital/frontend-sitio-web-digital
+  - sitio-web-digital/backend-sitio-web-digital
 github_runner_version: "2.321.0" # revisar la última en https://github.com/actions/runner/releases
 github_runner_labels: "self-hosted,linux,x64,aws"
 github_runner_user: github-runner

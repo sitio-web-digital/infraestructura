@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # Copia los tokens de los túneles (salida sensible de terraform apply) a
-# group_vars/vault.yml — para no tener que copiarlos a mano. Corré esto
+# group_vars/all/vault.yml — para no tener que copiarlos a mano. Corré esto
 # ANTES de encriptar vault.yml con ansible-vault; si ya está encriptado,
-# desencriptalo primero con `ansible-vault decrypt group_vars/vault.yml`.
+# desencriptalo primero con `ansible-vault decrypt group_vars/all/vault.yml`.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-VAULT_FILE="ansible/group_vars/vault.yml"
+VAULT_FILE="ansible/group_vars/all/vault.yml"
 
 if [ ! -f "$VAULT_FILE" ]; then
-  echo "No existe $VAULT_FILE — copiá primero group_vars/vault.yml.example a vault.yml." >&2
+  echo "No existe $VAULT_FILE — copiá primero group_vars/all/vault.yml.example a vault.yml." >&2
   exit 1
 fi
 

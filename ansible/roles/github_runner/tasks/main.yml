@@ -1,8 +1,22 @@
 ---
-# Un solo runner, registrado a nivel ORGANIZACIÓN (sitio-web-digital) — así
-# atiende los jobs `runs-on: self-hosted` de los dos repos
-# (frontend-sitio-web-digital y backend-sitio-web-digital) con un solo
-# servicio systemd, en vez de instalar y mantener dos runners por separado.
+# Un runner por REPO (no uno solo a nivel organización): la cuenta que
+# tiene el PAT (vault_github_runner_pat) es colaboradora de los dos repos
+# pero no figura como miembro de la organización sitio-web-digital, y
+# registrar un runner a nivel org pide justamente eso — devuelve 404
+# aunque el token tenga el scope admin:org (confirmado a mano contra la
+# API: GET /orgs/sitio-web-digital también da 404 con este token).
+# Registrar a nivel repo en cambio solo pide admin sobre CADA repo
+# puntual, que la cuenta sí tiene. Se puede volver a un solo runner de
+# organización más adelante (arreglando la membership) sin tocar nada de
+# la app — es un detalle de cómo se registra el runner, no de cómo
+# despliega.
+#
+# Cada repo de github_runner_repos (ver group_vars/all/vars.yml) corre
+# como su propio servicio systemd, en su propio directorio
+# ({{ github_runner_home }}-<repo>) — un runner caído o mal registrado no
+# afecta al del otro repo. La lógica de cada uno vive en register_one.yml
+# porque un `block` no admite `loop` directamente en Ansible — solo un
+# `include_tasks` sí.
 
 - name: Crear el usuario del runner (si no existe ya, ver roles/docker)
   ansible.builtin.user:
@@ -11,82 +25,14 @@
     shell: /bin/bash
     create_home: true
 
-- name: Crear el directorio del runner
-  ansible.builtin.file:
-    path: "{{ github_runner_home }}"
-    state: directory
-    owner: "{{ github_runner_user }}"
-    group: "{{ github_runner_user }}"
-    mode: "0755"
-
-- name: Ver si el runner ya está configurado (idempotencia)
-  ansible.builtin.stat:
-    path: "{{ github_runner_home }}/.runner"
-  register: runner_configured
-
-- name: Descargar el paquete del runner
-  ansible.builtin.get_url:
-    url: "https://github.com/actions/runner/releases/download/v{{ github_runner_version }}/actions-runner-linux-x64-{{ github_runner_version }}.tar.gz"
-    dest: "/tmp/actions-runner-linux-x64-{{ github_runner_version }}.tar.gz"
-    mode: "0644"
-  when: not runner_configured.stat.exists
-
-- name: Extraer el runner
-  ansible.builtin.unarchive:
-    src: "/tmp/actions-runner-linux-x64-{{ github_runner_version }}.tar.gz"
-    dest: "{{ github_runner_home }}"
-    remote_src: true
-    owner: "{{ github_runner_user }}"
-    group: "{{ github_runner_user }}"
-  when: not runner_configured.stat.exists
-
-- name: Instalar dependencias nativas del runner (bin/installdependencies.sh)
-  ansible.builtin.command:
-    cmd: ./bin/installdependencies.sh
-    chdir: "{{ github_runner_home }}"
-  when: not runner_configured.stat.exists
-
-# Token de registro de corta duración (expira en ~1 hora) — se pide fresco
-# en cada corrida en vez de guardarlo, así el PAT solo hace falta acá y
-# nunca queda escrito en la instancia.
-- name: Pedir un token de registro a la API de GitHub (nivel organización)
-  ansible.builtin.uri:
-    url: "https://api.github.com/orgs/{{ github_org }}/actions/runners/registration-token"
-    method: POST
-    headers:
-      Authorization: "Bearer {{ vault_github_runner_pat }}"
-      Accept: "application/vnd.github+json"
-    status_code: 201
-    body_format: json
-  register: runner_registration_token
-  when: not runner_configured.stat.exists
-  no_log: true # la respuesta incluye el token de registro, no debe quedar en el log
-
-- name: Configurar el runner
-  ansible.builtin.command:
-    cmd: >-
-      ./config.sh
-      --url https://github.com/{{ github_org }}
-      --token {{ runner_registration_token.json.token }}
-      --name {{ ansible_hostname }}
-      --labels {{ github_runner_labels }}
-      --unattended
-      --replace
-    chdir: "{{ github_runner_home }}"
-  become: true
-  become_user: "{{ github_runner_user }}"
-  when: not runner_configured.stat.exists
-  no_log: true
-
-- name: Instalar el runner como servicio systemd
-  ansible.builtin.command:
-    cmd: "./svc.sh install {{ github_runner_user }}"
-    chdir: "{{ github_runner_home }}"
-  when: not runner_configured.stat.exists
-
-- name: Habilitar y arrancar el servicio del runner
-  ansible.builtin.systemd:
-    name: "actions.runner.{{ github_org }}.{{ ansible_hostname }}.service"
-    enabled: true
-    state: started
-    daemon_reload: true
+- name: Preparar cada runner (uno por repo)
+  ansible.builtin.include_tasks:
+    file: register_one.yml
+  vars:
+    runner_slug: "{{ item | regex_replace('.*/', '') }}"
+    runner_home: "{{ github_runner_home }}-{{ runner_slug }}"
+    runner_name: "{{ ansible_hostname }}-{{ runner_slug }}"
+    service_name_slug: "{{ item | regex_replace('/', '-') }}"
+  loop: "{{ github_runner_repos }}"
+  loop_control:
+    label: "{{ item }}"
