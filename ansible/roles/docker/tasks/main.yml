@@ -66,3 +66,11 @@
     create_home: true
     groups: docker
     append: true
+
+# Para poder correr `docker ps`/`docker logs` a mano por SSH sin sudo — el
+# usuario admin de la AMI de Ubuntu en AWS siempre es "ubuntu".
+- name: Sumar al usuario ubuntu al grupo docker (para administrar a mano sin sudo)
+  ansible.builtin.user:
+    name: ubuntu
+    groups: docker
+    append: true
