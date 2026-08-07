@@ -38,17 +38,22 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "frontend" {
   account_id = var.cloudflare_account_id
   tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.frontend.id
 
+  # Las reglas de ingress son ruteo INTERNO del túnel — no crean ni tocan
+  # ningún registro DNS de nadie, así que van siempre, sin atarlas a
+  # manage_dns (esa variable es solo para si Terraform crea el registro
+  # DNS en sí; el CNAME de cada hostname puede perfectamente existir ya,
+  # creado a mano — de hecho así quedó la primera vez: los 4 hostnames de
+  # esta app ya existían en la zona compartida desde el servidor viejo, y
+  # se actualizaron a mano para apuntar a los túneles nuevos en vez de
+  # crearlos de cero).
   config {
     ingress_rule {
       hostname = var.app_hostname
       service  = "http://localhost:8081"
     }
-    dynamic "ingress_rule" {
-      for_each = var.manage_dns ? [var.customer_wildcard_hostname] : []
-      content {
-        hostname = ingress_rule.value
-        service  = "http://localhost:8081"
-      }
+    ingress_rule {
+      hostname = var.customer_wildcard_hostname
+      service  = "http://localhost:8081"
     }
     ingress_rule {
       service = "http_status:404"
