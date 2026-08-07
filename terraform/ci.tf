@@ -42,10 +42,18 @@ data "aws_iam_policy_document" "github_actions_assume_role" {
 
     # Restringido a ESTE repo — cualquier otro repo de la cuenta/org de
     # GitHub del dueño del token no puede asumir este rol.
+    #
+    # El claim `sub` real (confirmado vía CloudTrail después de un primer
+    # intento fallido) NO es el clásico "repo:owner/repo:..." — GitHub
+    # inserta el ID numérico interno de la organización y del repo:
+    #   repo:sitio-web-digital@309242884/infraestructura-sitio-web-digital-@1325860676:environment:production
+    # (esto es a propósito de GitHub: así el trust policy no se rompe si
+    # algún día se renombra la org o el repo). El `*` extra después de cada
+    # segmento cubre ese "@<id>".
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo}:*"]
+      values   = ["repo:${replace(var.github_repo, "/", "*/")}*:*"]
     }
   }
 }
