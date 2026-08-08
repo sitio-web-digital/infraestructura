@@ -37,6 +37,28 @@ resource "aws_iam_role_policy_attachment" "s3_uploads" {
   policy_arn = aws_iam_policy.s3_uploads.arn
 }
 
+# Mails transaccionales (ver server/src/utils/mail.js) — mismo patrón que
+# S3: el SDK toma las credenciales del rol de la instancia, nada de
+# access keys en el .env. Scopeado a la identidad de dominio verificada,
+# no a "*".
+data "aws_iam_policy_document" "ses_send" {
+  statement {
+    sid       = "SendMail"
+    actions   = ["ses:SendEmail", "ses:SendRawEmail"]
+    resources = ["arn:aws:ses:${var.aws_region}:*:identity/${var.ses_domain}"]
+  }
+}
+
+resource "aws_iam_policy" "ses_send" {
+  name   = "${local.name}-ses-send"
+  policy = data.aws_iam_policy_document.ses_send.json
+}
+
+resource "aws_iam_role_policy_attachment" "ses_send" {
+  role       = aws_iam_role.app.name
+  policy_arn = aws_iam_policy.ses_send.arn
+}
+
 # Acceso de administración vía AWS Systems Manager Session Manager, como
 # alternativa/respaldo a SSH — no hace falta abrir ningún puerto ni
 # gestionar claves para entrar a la instancia desde la consola de AWS o la

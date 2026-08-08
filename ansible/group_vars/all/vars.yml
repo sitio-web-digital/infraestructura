@@ -33,11 +33,19 @@ aws_region: sa-east-1
 s3_bucket_name: sitiowebdigital-media
 cloudfront_domain: d38e2ri338t20n.cloudfront.net
 
-# --- Mercado Pago ---
-# URL base del frontend — arma el back_url de cada suscripción
-# (.../#/suscripcion/confirmar, ver server/src/routes/subscription.js). Es
-# el mismo hostname que app_hostname en terraform/variables.tf.
-app_url: "https://sitiowebdigital.cloudfordeploy.com"
+# --- Dominio propio (migrado de cloudfordeploy.com el 2026-08-08) ---
+# Mismos hostnames que terraform/variables.tf (app_hostname/api_hostname/
+# customer_wildcard_hostname) y VITE_ROOT_DOMAIN del frontend.
+app_url: "https://app.sitioweb.digital" # arma el back_url de MP, ver subscription.js
+root_domain: "sitioweb.digital" # arma los links de sitio (subdominio.dominio) en los mails
+
+# --- Mails transaccionales (ver server/src/utils/mail.js) ---
+mail_from: "SitioWeb Digital <no-reply@sitioweb.digital>"
+# Manda TODO mail real acá, sin importar el destinatario — sacar esta
+# variable (y el ENV correspondiente en backend_env.j2) cuando se apruebe
+# el acceso de producción de SES y se quiera mandar a los clientes de
+# verdad, no solo probar.
+mail_override_to: "facundo_dg10@hotmail.com"
 
 # --- cloudflared ---
 cloudflared_version: "2024.10.0" # revisar la última en https://github.com/cloudflare/cloudflared/releases

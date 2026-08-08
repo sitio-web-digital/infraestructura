@@ -88,31 +88,37 @@ variable "cloudflare_account_id" {
 }
 
 variable "cloudflare_zone_id" {
-  description = "Zone ID del dominio bajo el que viven los túneles (ej. cloudfordeploy.com). Solo hace falta si manage_dns = true."
+  description = "Zone ID de sitioweb.digital (dominio propio, migrado de DonWeb el 2026-08-08 — ya no cloudfordeploy.com, esa zona compartida queda de lado)."
   type        = string
-  default     = ""
+  default     = "5ca8bc07d777281e518637802c13e031"
 }
 
 variable "manage_dns" {
-  description = "Si Terraform crea los registros DNS de los túneles. Por defecto en false a propósito: cloudfordeploy.com es una zona COMPARTIDA con otros proyectos (ver .env.production del frontend), así que un registro wildcard mal puesto puede romper subdominios de otro proyecto. Dejalo en false y creá los registros a mano (o vía Terraform una vez confirmado que no pisa nada) hasta migrar a un dominio propio."
+  description = "Si Terraform crea los registros DNS de los túneles. Ahora en true: sitioweb.digital es un dominio propio (ya no cloudfordeploy.com, la zona compartida con otros proyectos), así que Terraform puede manejar sus registros sin riesgo de pisar nada ajeno."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "app_hostname" {
   description = "Hostname fijo de la app en sí (login, dashboard, editor) — distinto del wildcard de subdominios de cliente. Ver src/utils/rootDomain.js del frontend."
   type        = string
-  default     = "sitiowebdigital.cloudfordeploy.com"
+  default     = "app.sitioweb.digital"
 }
 
 variable "customer_wildcard_hostname" {
-  description = "Hostname wildcard para las páginas publicadas de cada cliente (<subdominio>.cloudfordeploy.com). Solo se usa si manage_dns = true."
+  description = "Hostname wildcard para las páginas publicadas de cada cliente (<subdominio>.sitioweb.digital). Un solo nivel (no algo como *.app.sitioweb.digital): el certificado gratis de Cloudflare solo cubre un nivel de wildcard."
   type        = string
-  default     = "*.cloudfordeploy.com"
+  default     = "*.sitioweb.digital"
 }
 
 variable "api_hostname" {
   description = "Hostname del backend/API."
   type        = string
-  default     = "api-dev.cloudfordeploy.com"
+  default     = "api.sitioweb.digital"
+}
+
+variable "ses_domain" {
+  description = "Dominio verificado en Amazon SES para mails transaccionales (ver server/src/utils/mail.js e iam.tf)."
+  type        = string
+  default     = "sitioweb.digital"
 }

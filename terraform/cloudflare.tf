@@ -98,13 +98,12 @@ locals {
 }
 
 # --- DNS (opcional, ver variable manage_dns) --------------------------------
-# cloudfordeploy.com es una zona COMPARTIDA con otros proyectos (así lo
-# documenta .env.production del frontend). Un registro wildcard acá
-# (*.cloudfordeploy.com) puede pisar subdominios de otro proyecto que viva
-# en la misma zona si no se revisa antes. Por eso manage_dns nace en false:
-# activalo solo después de confirmar en el dashboard de Cloudflare que nada
-# más usa esos hostnames, o cuando se migre a un dominio propio
-# (sitiowebdigital.com.ar).
+# Migrado el 2026-08-08: sitioweb.digital es un dominio PROPIO (antes vivía
+# en cloudfordeploy.com, una zona compartida con otros proyectos, de ahí el
+# cuidado de antes con el wildcard). Ya no aplica ese riesgo — manage_dns
+# quedó en true. Ojo igual: la zona sí tiene registros previos del dominio
+# (mail/ftp/autoconfig/autodiscover/MX/SPF/DKIM del hosting viejo en DonWeb)
+# que Terraform NO administra — solo toca app/api/el wildcard de clientes.
 resource "cloudflare_record" "app" {
   count   = var.manage_dns ? 1 : 0
   zone_id = var.cloudflare_zone_id
