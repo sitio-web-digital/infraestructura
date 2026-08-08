@@ -36,7 +36,13 @@ cloudfront_domain: d38e2ri338t20n.cloudfront.net
 # --- Dominio propio (migrado de cloudfordeploy.com el 2026-08-08) ---
 # Mismos hostnames que terraform/variables.tf (app_hostname/api_hostname/
 # customer_wildcard_hostname) y VITE_ROOT_DOMAIN del frontend.
-app_url: "https://app.sitioweb.digital" # arma el back_url de MP, ver subscription.js
+#
+# app_url usa a propósito el hostname VIEJO, no app.sitioweb.digital: el
+# validador de back_url de Mercado Pago rechaza el TLD .digital entero
+# (probado en vivo, 2026-08-08 — no es cosa nuestra). Mismo túnel/servicio
+# de siempre, solo distinto hostname para esta única cosa — ver
+# terraform/cloudflare.tf > mp_back_url_hostname y subscription.js.
+app_url: "https://sitiowebdigital.cloudfordeploy.com"
 root_domain: "sitioweb.digital" # arma los links de sitio (subdominio.dominio) en los mails
 
 # --- Mails transaccionales (ver server/src/utils/mail.js) ---

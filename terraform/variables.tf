@@ -122,3 +122,9 @@ variable "ses_domain" {
   type        = string
   default     = "sitioweb.digital"
 }
+
+variable "mp_back_url_hostname" {
+  description = "Hostname viejo (zona compartida cloudfordeploy.com) que se mantiene SOLO para el back_url de Mercado Pago — su validador rechaza el TLD .digital (probado en vivo, 2026-08-08). El registro DNS de este hostname ya existe (creado a mano, no lo administra Terraform); acá solo se agrega la regla de ingress del túnel."
+  type        = string
+  default     = "sitiowebdigital.cloudfordeploy.com"
+}

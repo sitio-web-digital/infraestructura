@@ -55,6 +55,17 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "frontend" {
       hostname = var.customer_wildcard_hostname
       service  = "http://localhost:8081"
     }
+    # Mercado Pago rechaza el back_url de la suscripción si el dominio
+    # termina en ".digital" (probado en vivo, 2026-08-08: hasta con el sitio
+    # viejo de DonWeb en ese TLD, sin túnel de por medio, tira "Invalid value
+    # for back_url" — no es cosa nuestra, alguna lista de TLDs de su lado).
+    # Mientras dure eso, MP_BACK_URL (ver server/.env / Ansible) sigue
+    # apuntando acá — mismo hostname viejo, mismo servicio, solo para que
+    # el link de retorno post-pago funcione.
+    ingress_rule {
+      hostname = var.mp_back_url_hostname
+      service  = "http://localhost:8081"
+    }
     ingress_rule {
       service = "http_status:404"
     }
