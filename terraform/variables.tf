@@ -128,3 +128,37 @@ variable "mp_back_url_hostname" {
   type        = string
   default     = "sitiowebdigital.cloudfordeploy.com"
 }
+
+# ---------------------------------------------------------------------------
+# Matafuego SaaS (puntoco2.com) — segunda app en la MISMA instancia
+# ---------------------------------------------------------------------------
+# Comparte cuenta de Cloudflare con sitioweb.digital (misma cloudflare_account_id
+# de arriba), pero puntoco2.com es una zona DISTINTA — de ahí un token y un
+# zone_id propios acá, en vez de reusar cloudflare_zone_id/cloudflare_api_token.
+# El token de acá solo necesita Zone:DNS:Edit sobre la zona de puntoco2.com; la
+# creación del túnel en sí sigue usando el token de la cuenta (arriba), que ya
+# tiene Account > Cloudflare Tunnel > Edit.
+
+variable "puntoco2_cloudflare_api_token" {
+  description = "API Token de Cloudflare con permiso Zone:DNS:Edit sobre la zona puntoco2.com (distinto del token de arriba, que es el de la cuenta). NUNCA con un default — pasalo por terraform.tfvars o TF_VAR_puntoco2_cloudflare_api_token."
+  type        = string
+  sensitive   = true
+}
+
+variable "puntoco2_cloudflare_zone_id" {
+  description = "Zone ID de puntoco2.com (Cloudflare Dashboard > la zona > barra lateral derecha)."
+  type        = string
+  default     = "533bc36802755559ec3b71367424ea48"
+}
+
+variable "matafuego_api_hostname" {
+  description = "Hostname del backend de Matafuego SaaS (Next.js, un solo repo con front+API)."
+  type        = string
+  default     = "api.puntoco2.com"
+}
+
+variable "matafuego_backend_port" {
+  description = "Puerto local (en la instancia) donde escucha el backend de Matafuego. Distinto de backend_port (4000, ya usado por sitio web) porque los dos contenedores corren con --network host en la misma máquina."
+  type        = number
+  default     = 4001
+}

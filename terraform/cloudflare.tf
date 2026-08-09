@@ -87,6 +87,43 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "api" {
   }
 }
 
+# --- Matafuego SaaS (puntoco2.com) ------------------------------------------
+# Tercer túnel, mismo patrón que "api" — su propio servicio systemd
+# (cloudflared-matafuego-api, ver ansible/roles/cloudflared) corriendo en la
+# MISMA instancia que sitio web, sin pisar nada de los otros dos túneles.
+# Usa el provider alias "puntoco2" (token propio, confirmado con permiso de
+# Cloudflare Tunnel sobre la cuenta) para TODO este bloque — tunel, config e
+# ingress incluidos, no solo el registro DNS — así no depende en nada del
+# token original de sitio web.
+
+resource "random_id" "tunnel_secret_matafuego_api" {
+  byte_length = 35
+}
+
+resource "cloudflare_zero_trust_tunnel_cloudflared" "matafuego_api" {
+  provider   = cloudflare.puntoco2
+  account_id = var.cloudflare_account_id
+  name       = "${local.name}-matafuego-api"
+  secret     = random_id.tunnel_secret_matafuego_api.b64_std
+  config_src = "cloudflare"
+}
+
+resource "cloudflare_zero_trust_tunnel_cloudflared_config" "matafuego_api" {
+  provider   = cloudflare.puntoco2
+  account_id = var.cloudflare_account_id
+  tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.matafuego_api.id
+
+  config {
+    ingress_rule {
+      hostname = var.matafuego_api_hostname
+      service  = "http://localhost:${var.matafuego_backend_port}"
+    }
+    ingress_rule {
+      service = "http_status:404"
+    }
+  }
+}
+
 # Token que usa `cloudflared service install <token>` en la instancia. El
 # provider de Cloudflare no expone un data source para pedirlo ya armado
 # (eso es lo que hace `cloudflared tunnel token` contra la API) — pero el
@@ -105,6 +142,11 @@ locals {
     a = var.cloudflare_account_id
     t = cloudflare_zero_trust_tunnel_cloudflared.api.id
     s = random_id.tunnel_secret_api.b64_std
+  }))
+  tunnel_token_matafuego_api = base64encode(jsonencode({
+    a = var.cloudflare_account_id
+    t = cloudflare_zero_trust_tunnel_cloudflared.matafuego_api.id
+    s = random_id.tunnel_secret_matafuego_api.b64_std
   }))
 }
 
@@ -140,4 +182,16 @@ resource "cloudflare_record" "api" {
   content = "${cloudflare_zero_trust_tunnel_cloudflared.api.id}.cfargotunnel.com"
   type    = "CNAME"
   proxied = true
+}
+
+# Zona distinta (puntoco2.com, no sitioweb.digital) → provider alias con el
+# token propio de esa zona (ver versions.tf y variables.tf).
+resource "cloudflare_record" "matafuego_api" {
+  count    = var.manage_dns ? 1 : 0
+  provider = cloudflare.puntoco2
+  zone_id  = var.puntoco2_cloudflare_zone_id
+  name     = var.matafuego_api_hostname
+  content  = "${cloudflare_zero_trust_tunnel_cloudflared.matafuego_api.id}.cfargotunnel.com"
+  type     = "CNAME"
+  proxied  = true
 }

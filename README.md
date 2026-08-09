@@ -17,27 +17,39 @@ siguen siendo sus propios repos, con sus propios workflows de deploy
 ```
                                  Internet
                                     │
-                     ┌──────────────┴──────────────┐
-                     │        Cloudflare            │
-                     │  (termina TLS, hace de CDN)   │
-                     └───────┬───────────────┬──────┘
-                    túnel "frontend"    túnel "api"
-                             │                 │
-   ┌─────────────────────────┴─────────────────┴──────────────────────┐
-   │  EC2 (Ubuntu 22.04, t3.medium, sa-east-1)                        │
-   │                                                                   │
-   │   cloudflared-frontend.service  →  localhost:8081  (nginx)        │
-   │   cloudflared-api.service       →  localhost:4000  (Node/Express) │
-   │                                                                   │
-   │   docker: sitioweb-frontend, sitioweb-backend, sitiowebdigital-db │
-   │   (los dos primeros los levanta el runner en cada deploy;         │
-   │    el tercero — Postgres — lo levanta este mismo playbook)        │
-   │                                                                   │
-   │   actions.runner.sitio-web-digital-frontend-....service           │
-   │   actions.runner.sitio-web-digital-backend-....service            │
-   │   (un runner por repo — ver nota sobre membership de la org)      │
-   └───────────────────────────────────────────────────────────────────┘
+                     ┌──────────────┴────────────────────────────┐
+                     │               Cloudflare                   │
+                     │        (termina TLS, hace de CDN)           │
+                     └───┬───────────────┬───────────────────┬────┘
+              túnel "frontend"    túnel "api"    túnel "matafuego-api"
+                         │               │                   │
+   ┌─────────────────────┴───────────────┴───────────────────┴─────────────┐
+   │  EC2 (Ubuntu 22.04, t3.medium, sa-east-1)                              │
+   │                                                                         │
+   │   cloudflared-frontend.service      →  localhost:8081  (nginx)          │
+   │   cloudflared-api.service           →  localhost:4000  (Node/Express)   │
+   │   cloudflared-matafuego-api.service →  localhost:4001  (Next.js)        │
+   │                                                                         │
+   │   docker: sitioweb-frontend, sitioweb-backend, sitiowebdigital-db,      │
+   │           puntoco2-backend, matafuego-db                               │
+   │   (las apps las levanta el runner de CADA repo en su deploy;            │
+   │    los dos Postgres los levanta este mismo playbook)                   │
+   │                                                                         │
+   │   actions.runner.sitio-web-digital-frontend-....service                │
+   │   actions.runner.sitio-web-digital-backend-....service                 │
+   │   actions.runner.sitio-web-digital-backend-puntoCO2-....service        │
+   │   (un runner por repo — ver nota sobre membership de la org)           │
+   └─────────────────────────────────────────────────────────────────────────┘
 ```
+
+**Dos apps, una sola instancia.** `sitioweb.digital` (frontend + backend) y
+`puntoco2.com` (Matafuego SaaS, un solo repo Next.js que hace de "backend")
+comparten la misma máquina — cada una con su propio túnel, su propio
+Postgres (puertos 5435 y 5436) y su propio runner, sin pisarse. Matafuego
+usa `api.puntoco2.com` como único hostname por ahora (el front de puntoco2
+todavía no se desplegó). Ver `ansible/roles/matafuego_postgres`,
+`ansible/roles/matafuego_env` y el bloque "Matafuego SaaS" de
+`terraform/cloudflare.tf` — mismo patrón que sitio web, en paralelo.
 
 Ningún puerto de aplicación (80/443/4000/5435/8081) está expuesto a
 internet directo — el Security Group de la instancia solo abre SSH, y todo
@@ -76,9 +88,10 @@ seguro** que si el servidor original tenía 80/443 abiertos.
   `Account > Cloudflare Tunnel > Edit` (sumá `Zone > DNS > Edit` si vas a
   usar `manage_dns = true`).
 - Un **Personal Access Token de GitHub** (classic) con scope `admin:org`,
-  de alguien con acceso de administrador sobre los dos repos
-  (`frontend-sitio-web-digital` y `backend-sitio-web-digital`) — se usa una
-  sola vez para registrar el runner (ver abajo, se puede revocar después).
+  de alguien con acceso de administrador sobre los repos en
+  `github_runner_repos` (`frontend-sitio-web-digital`,
+  `backend-sitio-web-digital` y `backend-puntoCO2`) — se usa una sola vez por
+  repo para registrar su runner (ver abajo, se puede revocar después).
   Registra un runner por REPO, no uno solo a nivel organización — pedir el
   registro a nivel org (`POST /orgs/{org}/actions/runners/registration-token`)
   devuelve 404 si la cuenta del token no figura como *miembro* de la
@@ -288,6 +301,7 @@ variables > Actions):
 | `AWS_ROLE_ARN` | `arn:aws:iam::269478442857:role/sitiowebdigital-prod-github-actions` (ya existe, ver `terraform output github_actions_role_arn`) |
 | `CLOUDFLARE_API_TOKEN` | el mismo token de `terraform.tfvars` |
 | `CLOUDFLARE_ACCOUNT_ID` | el mismo de `terraform.tfvars` |
+| `PUNTOCO2_CLOUDFLARE_API_TOKEN` | token de `Zone:DNS:Edit` SOLO sobre la zona `puntoco2.com` (cuenta de Cloudflare compartida con sitioweb.digital, pero zona distinta — ver `terraform/variables.tf` > `puntoco2_cloudflare_api_token`) |
 | `ALLOWED_SSH_CIDRS` | ej. `["200.45.12.8/32"]` — tu IP pública |
 
 ## Backend remoto de estado (Terraform)

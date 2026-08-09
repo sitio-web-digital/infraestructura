@@ -20,3 +20,11 @@ cloudflare_account_id  = "pon-tu-account-id-aca"
 # proyecto en la zona compartida cloudfordeploy.com — ver cloudflare.tf.
 # manage_dns        = false
 # cloudflare_zone_id = "pon-el-zone-id-aca"
+
+# --- Matafuego SaaS (puntoco2.com) ---
+# Token distinto del de arriba: solo necesita Zone:DNS:Edit sobre la zona
+# puntoco2.com (mismo dashboard, My Profile > API Tokens > Create Token).
+puntoco2_cloudflare_api_token = "pon-el-token-de-la-zona-puntoco2-aca"
+# puntoco2_cloudflare_zone_id = "533bc36802755559ec3b71367424ea48" # default
+# matafuego_api_hostname      = "api.puntoco2.com"                # default
+# matafuego_backend_port      = 4001                               # default

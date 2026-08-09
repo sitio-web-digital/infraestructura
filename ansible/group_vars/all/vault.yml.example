@@ -41,3 +41,16 @@ vault_cloudflare_account_id: ""
 #     scripts/fetch-tunnel-tokens.sh — no los escribas a mano) ---
 vault_cloudflare_tunnel_token_frontend: ""
 vault_cloudflare_tunnel_token_api: ""
+vault_cloudflare_tunnel_token_matafuego_api: ""
+
+# --- Matafuego SaaS (puntoco2.com) ---
+# Contraseña del rol admin/migrate de Postgres (POSTGRES_PASSWORD del
+# contenedor matafuego-db, y lo que usa DATABASE_URL).
+vault_matafuego_db_password: "generá-una-contraseña-fuerte-aca"
+# Contraseña del rol de mínimo privilegio "app_user" (RUNTIME_DATABASE_URL) —
+# ese rol NO lo crea Ansible, se crea a mano una sola vez corriendo
+# `npm run db:bootstrap` contra la base nueva (ver .env.example del repo del
+# backend). Fijá acá la contraseña que le vas a poner en ese paso.
+vault_matafuego_app_user_password: "generá-una-contraseña-fuerte-aca"
+# Secret de sesión (AUTH_SECRET). Generar con: openssl rand -base64 32
+vault_matafuego_auth_secret: "generá-un-secret-random-fuerte-aca"

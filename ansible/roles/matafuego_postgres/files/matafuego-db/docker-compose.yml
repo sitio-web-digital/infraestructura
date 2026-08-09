@@ -1,0 +1,28 @@
+# Copia 1:1 del docker-compose.yml local del repo backend-puntoCO2 (mismo
+# servicio "db"), adaptada al patrón de sitio web (contraseña real vía .env
+# generado por Ansible, no hardcodeada acá). A diferencia de
+# roles/postgres (sitiowebdigital-db), este NO monta un init.sql: el propio
+# backend corre `npx prisma migrate deploy` en cada arranque (ver
+# docker-entrypoint.sh del repo), así que el schema lo crean las migraciones,
+# no un dump SQL fijo.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: matafuego-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_DB: "${POSTGRES_DB}"
+    ports:
+      - "${POSTGRES_HOST_PORT}:5432"
+    volumes:
+      - matafuego_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  matafuego_pgdata:

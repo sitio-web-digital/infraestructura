@@ -39,3 +39,11 @@ provider "aws" {
 provider "cloudflare" {
   api_token = var.cloudflare_api_token
 }
+
+# Alias para la zona de puntoco2.com — misma cuenta de Cloudflare, pero un
+# token distinto (solo tiene permiso de DNS sobre ESA zona, no sobre la de
+# sitioweb.digital). Ver el comentario en variables.tf.
+provider "cloudflare" {
+  alias     = "puntoco2"
+  api_token = var.puntoco2_cloudflare_api_token
+}

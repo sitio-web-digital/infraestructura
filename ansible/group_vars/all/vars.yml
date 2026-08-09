@@ -7,6 +7,7 @@
 github_runner_repos:
   - sitio-web-digital/frontend-sitio-web-digital
   - sitio-web-digital/backend-sitio-web-digital
+  - sitio-web-digital/backend-puntoCO2
 github_runner_version: "2.321.0" # revisar la última en https://github.com/actions/runner/releases
 github_runner_labels: "self-hosted,linux,x64,aws"
 github_runner_user: github-runner
@@ -66,3 +67,18 @@ cloudflared_tunnels:
     token: "{{ vault_cloudflare_tunnel_token_frontend }}"
   - name: api
     token: "{{ vault_cloudflare_tunnel_token_api }}"
+  - name: matafuego-api
+    token: "{{ vault_cloudflare_tunnel_token_matafuego_api }}"
+
+# --- Matafuego SaaS (puntoco2.com) — segunda app en la misma instancia -----
+# Mismo patrón que el backend de sitio web (roles/backend_env), pero en su
+# propio archivo/puerto/Postgres para no tocar nada de lo que ya funciona.
+# El puerto tiene que coincidir con matafuego_backend_port de terraform/ (el
+# ingress del túnel apunta ahí) y con PORT en el .env generado.
+matafuego_app_name: puntoco2-backend # nombre de imagen/contenedor que usa deploy-backend.yml del repo
+matafuego_backend_port: 4001
+matafuego_env_path: "{{ app_root }}/puntoco2-backend.env" # mismo path que espera backend-puntoCO2/.github/workflows/deploy-backend.yml
+matafuego_db_compose_dir: "{{ app_root }}/matafuego-db"
+matafuego_db_host_port: 5436
+matafuego_db_user: matafuego
+matafuego_db_name: matafuego_saas
