@@ -23,7 +23,17 @@ variable "environment" {
 variable "github_repo" {
   description = "Repo de GitHub (formato owner/nombre) autorizado a asumir el rol de CI vía OIDC — ver ci.tf."
   type        = string
-  default     = "sitio-web-digital/infraestructura-sitio-web-digital-"
+  # Renombrado el 2026-08-09 (de "infraestructura-sitio-web-digital-" a
+  # "infraestructura") — el trust policy de ci.tf usa este valor para armar
+  # el patrón del claim `sub` del token OIDC, así que quedó desactualizado
+  # después del rename y terraform-apply.yml empezó a fallar en
+  # "Could not assume role with OIDC: Not authorized to perform
+  # sts:AssumeRoleWithWebIdentity" (confirmado en la corrida que disparó el
+  # push de Matafuego SaaS). El fix en sí (actualizar el trust policy) hay
+  # que aplicarlo con credenciales que NO sean el rol de CI — ese mismo rol
+  # no tiene permiso de iam:UpdateAssumeRolePolicy sobre sí mismo, así que
+  # una corrida de CI rota no puede autoarreglarse.
+  default = "sitio-web-digital/infraestructura"
 }
 
 variable "tfstate_bucket_name" {
