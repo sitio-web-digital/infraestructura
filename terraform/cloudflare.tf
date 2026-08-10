@@ -118,53 +118,13 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "matafuego_api" {
       hostname = var.matafuego_api_hostname
       service  = "http://localhost:${var.matafuego_backend_port}"
     }
-    ingress_rule {
-      service = "http_status:404"
-    }
-  }
-}
-
-# Cuarto túnel: puntoco2.com como dominio único, ruteado por PATH — nada de
-# subdominios (se probó con app.puntoco2.com como hostname aparte y se
-# volvió atrás: generaba confusión, la app y la landing tienen que vivir
-# las dos bajo puntoco2.com). /home* (y cualquier otra ruta de la landing
-# que se agregue ahí) va al sitio de marketing (repo aparte, todavía sin
-# desplegar) y TODO lo demás (incluido /login, la entrada real de la app,
-# y la raíz) cae en el backend de Matafuego ya desplegado — mismo puerto
-# que usa api.puntoco2.com, que se dejó como está por si sirve para uso
-# técnico/integraciones. cloudflared ya evalúa las ingress_rule en orden y
-# usa la primera que matchea (path antes que el catch-all), así que el
-# orden de los bloques de abajo importa.
-resource "random_id" "tunnel_secret_matafuego_frontend" {
-  byte_length = 35
-}
-
-resource "cloudflare_zero_trust_tunnel_cloudflared" "matafuego_frontend" {
-  provider   = cloudflare.puntoco2
-  account_id = var.cloudflare_account_id
-  name       = "${local.name}-matafuego-frontend"
-  secret     = random_id.tunnel_secret_matafuego_frontend.b64_std
-  config_src = "cloudflare"
-}
-
-resource "cloudflare_zero_trust_tunnel_cloudflared_config" "matafuego_frontend" {
-  provider   = cloudflare.puntoco2
-  account_id = var.cloudflare_account_id
-  tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.matafuego_frontend.id
-
-  config {
-    # La landing (repo aparte, todavía sin desplegar) — solo lo que cuelga
-    # de /home. Se prepara el ingress ahora para que cuando el sitio exista,
-    # desplegarlo sea solo levantar un contenedor en matafuego_frontend_port,
-    # sin tocar Cloudflare de nuevo (mismo bootstrapping que tuvieron
-    # frontend/api de sitio web al principio: 502 hasta que algo escuche).
-    ingress_rule {
-      hostname = var.matafuego_frontend_hostname
-      path     = "^/home(/.*)?$"
-      service  = "http://localhost:${var.matafuego_frontend_port}"
-    }
-    # Todo lo demás en puntoco2.com (incluido /login y la raíz) es la app
-    # de Matafuego ya desplegada.
+    # puntoco2.com (apex): NO es un repo/deploy aparte — la landing (/home)
+    # y la app (/login, todo lo demás) son las dos rutas de ESTE MISMO
+    # Next.js (un solo repo, un solo contenedor, puerto matafuego_backend_port).
+    # Se probó antes con un cuarto túnel apuntando a un puerto de landing
+    # separado (8082) y se volvió atrás apenas se aclaró que es un solo
+    # deploy — nada de puerto ni túnel propio para "la landing", todo cae
+    # acá adentro.
     ingress_rule {
       hostname = var.matafuego_frontend_hostname
       service  = "http://localhost:${var.matafuego_backend_port}"
@@ -198,11 +158,6 @@ locals {
     a = var.cloudflare_account_id
     t = cloudflare_zero_trust_tunnel_cloudflared.matafuego_api.id
     s = random_id.tunnel_secret_matafuego_api.b64_std
-  }))
-  tunnel_token_matafuego_frontend = base64encode(jsonencode({
-    a = var.cloudflare_account_id
-    t = cloudflare_zero_trust_tunnel_cloudflared.matafuego_frontend.id
-    s = random_id.tunnel_secret_matafuego_frontend.b64_std
   }))
 }
 
@@ -254,13 +209,15 @@ resource "cloudflare_record" "matafuego_api" {
 
 # Zona apex (puntoco2.com, no un subdominio) — Cloudflare soporta CNAME acá
 # via "flattening" automático en el borde mientras el registro esté
-# proxiado (nube naranja), no hace falta un A record aparte.
+# proxiado (nube naranja), no hace falta un A record aparte. Apunta al
+# MISMO túnel que matafuego_api (ver el ingress de arriba) — puntoco2.com
+# no tiene un deploy propio, es el mismo Next.js.
 resource "cloudflare_record" "matafuego_frontend" {
   count    = var.manage_dns ? 1 : 0
   provider = cloudflare.puntoco2
   zone_id  = var.puntoco2_cloudflare_zone_id
   name     = var.matafuego_frontend_hostname
-  content  = "${cloudflare_zero_trust_tunnel_cloudflared.matafuego_frontend.id}.cfargotunnel.com"
+  content  = "${cloudflare_zero_trust_tunnel_cloudflared.matafuego_api.id}.cfargotunnel.com"
   type     = "CNAME"
   proxied  = true
 }

@@ -42,7 +42,6 @@ vault_cloudflare_account_id: ""
 vault_cloudflare_tunnel_token_frontend: ""
 vault_cloudflare_tunnel_token_api: ""
 vault_cloudflare_tunnel_token_matafuego_api: ""
-vault_cloudflare_tunnel_token_matafuego_frontend: ""
 
 # --- Matafuego SaaS (puntoco2.com) ---
 # Contraseña del rol admin/migrate de Postgres (POSTGRES_PASSWORD del

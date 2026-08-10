@@ -174,13 +174,7 @@ variable "matafuego_backend_port" {
 }
 
 variable "matafuego_frontend_hostname" {
-  description = "Dominio único de Matafuego (zona apex) — /home* rutea a la landing (repo aparte, todavía sin desplegar en matafuego_frontend_port) y todo lo demás (incluido /login) a la app ya desplegada, ver el ingress en cloudflare.tf."
+  description = "Dominio único de Matafuego (zona apex) — landing (/home) y app (/login, todo lo demás) son rutas del MISMO Next.js que matafuego_api_hostname, no un deploy aparte. Ver el ingress en cloudflare.tf."
   type        = string
   default     = "puntoco2.com"
-}
-
-variable "matafuego_frontend_port" {
-  description = "Puerto local (en la instancia) donde va a escuchar la landing de Matafuego una vez desplegada. Distinto de frontend_host_port (8081, sitio web)."
-  type        = number
-  default     = 8082
 }

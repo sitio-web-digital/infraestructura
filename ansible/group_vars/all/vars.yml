@@ -69,14 +69,14 @@ cloudflared_tunnels:
     token: "{{ vault_cloudflare_tunnel_token_api }}"
   - name: matafuego-api
     token: "{{ vault_cloudflare_tunnel_token_matafuego_api }}"
-  - name: matafuego-frontend
-    token: "{{ vault_cloudflare_tunnel_token_matafuego_frontend }}"
 
 # --- Matafuego SaaS (puntoco2.com) — segunda app en la misma instancia -----
 # Mismo patrón que el backend de sitio web (roles/backend_env), pero en su
 # propio archivo/puerto/Postgres para no tocar nada de lo que ya funciona.
 # El puerto tiene que coincidir con matafuego_backend_port de terraform/ (el
-# ingress del túnel apunta ahí) y con PORT en el .env generado.
+# ingress del túnel apunta ahí) y con PORT en el .env generado. Un solo
+# Next.js sirve TODO puntoco2.com (app y landing por path, ver cloudflare.tf)
+# — no hay un puerto/túnel/deploy aparte para "la landing".
 matafuego_app_name: puntoco2-backend # nombre de imagen/contenedor que usa deploy-backend.yml del repo
 matafuego_backend_port: 4001
 matafuego_env_path: "{{ app_root }}/puntoco2-backend.env" # mismo path que espera backend-puntoCO2/.github/workflows/deploy-backend.yml
@@ -84,9 +84,3 @@ matafuego_db_compose_dir: "{{ app_root }}/matafuego-db"
 matafuego_db_host_port: 5436
 matafuego_db_user: matafuego
 matafuego_db_name: matafuego_saas
-# Landing de puntoco2.com (repo aparte, todavía sin código/deploy) — el
-# túnel/DNS ya están listos (ver terraform/cloudflare.tf), falta nada más
-# que un contenedor escuchando acá cuando el sitio exista. No hay role de
-# Ansible para esto todavía porque no hay nada que desplegar; se agrega
-# cuando haya un repo real (mismo patrón que matafuego_env).
-matafuego_frontend_port: 8082

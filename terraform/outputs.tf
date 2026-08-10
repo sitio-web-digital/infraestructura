@@ -50,13 +50,3 @@ output "cloudflare_tunnel_token_matafuego_api" {
   sensitive   = true
 }
 
-output "cloudflare_tunnel_id_matafuego_frontend" {
-  description = "ID del túnel de la landing de Matafuego (puntoco2.com) — ver matafuego_frontend_port para el puerto."
-  value       = cloudflare_zero_trust_tunnel_cloudflared.matafuego_frontend.id
-}
-
-output "cloudflare_tunnel_token_matafuego_frontend" {
-  description = "Token para `cloudflared service install <token>` del túnel de la landing de Matafuego."
-  value       = local.tunnel_token_matafuego_frontend
-  sensitive   = true
-}
