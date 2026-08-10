@@ -173,12 +173,6 @@ variable "matafuego_backend_port" {
   default     = 4001
 }
 
-variable "matafuego_app_hostname" {
-  description = "Hostname de la app en sí (login, dashboard) — mismo servicio Next.js que matafuego_api_hostname (un solo repo, front+API juntos), solo que con el nombre que van a usar los usuarios finales en vez del técnico."
-  type        = string
-  default     = "app.puntoco2.com"
-}
-
 variable "matafuego_frontend_hostname" {
   description = "Dominio único de Matafuego (zona apex) — /home* rutea a la landing (repo aparte, todavía sin desplegar en matafuego_frontend_port) y todo lo demás (incluido /login) a la app ya desplegada, ver el ingress en cloudflare.tf."
   type        = string

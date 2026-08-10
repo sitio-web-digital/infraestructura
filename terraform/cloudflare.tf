@@ -118,30 +118,23 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "matafuego_api" {
       hostname = var.matafuego_api_hostname
       service  = "http://localhost:${var.matafuego_backend_port}"
     }
-    # Mismo servicio Next.js que matafuego_api_hostname (un solo repo,
-    # front+API juntos) — "app." es el nombre que va a ver el usuario final,
-    # "api." queda para uso técnico/integraciones. Dos hostnames, un mismo
-    # puerto.
-    ingress_rule {
-      hostname = var.matafuego_app_hostname
-      service  = "http://localhost:${var.matafuego_backend_port}"
-    }
     ingress_rule {
       service = "http_status:404"
     }
   }
 }
 
-# Cuarto túnel: puntoco2.com como dominio único, ruteado por PATH en vez de
-# por subdominio — decisión tomada después de armar app.puntoco2.com como
-# hostname aparte (ver más arriba): en vez de eso, /home* (y cualquier otra
-# ruta de la landing que se agregue ahí) va al sitio de marketing (repo
-# aparte, todavía sin desplegar) y TODO lo demás (incluido /login, que es
-# la entrada real de la app) cae en el backend de Matafuego ya desplegado
-# — mismo puerto que usan api.puntoco2.com/app.puntoco2.com, que se dejaron
-# como están por si sirven para uso técnico. cloudflared ya evalúa las
-# ingress_rule en orden y usa la primera que matchea (path antes que el
-# catch-all), así que el orden de los bloques de abajo importa.
+# Cuarto túnel: puntoco2.com como dominio único, ruteado por PATH — nada de
+# subdominios (se probó con app.puntoco2.com como hostname aparte y se
+# volvió atrás: generaba confusión, la app y la landing tienen que vivir
+# las dos bajo puntoco2.com). /home* (y cualquier otra ruta de la landing
+# que se agregue ahí) va al sitio de marketing (repo aparte, todavía sin
+# desplegar) y TODO lo demás (incluido /login, la entrada real de la app,
+# y la raíz) cae en el backend de Matafuego ya desplegado — mismo puerto
+# que usa api.puntoco2.com, que se dejó como está por si sirve para uso
+# técnico/integraciones. cloudflared ya evalúa las ingress_rule en orden y
+# usa la primera que matchea (path antes que el catch-all), así que el
+# orden de los bloques de abajo importa.
 resource "random_id" "tunnel_secret_matafuego_frontend" {
   byte_length = 35
 }
@@ -171,7 +164,7 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "matafuego_frontend" 
       service  = "http://localhost:${var.matafuego_frontend_port}"
     }
     # Todo lo demás en puntoco2.com (incluido /login y la raíz) es la app
-    # de Matafuego ya desplegada — mismo servicio que app.puntoco2.com.
+    # de Matafuego ya desplegada.
     ingress_rule {
       hostname = var.matafuego_frontend_hostname
       service  = "http://localhost:${var.matafuego_backend_port}"
@@ -254,16 +247,6 @@ resource "cloudflare_record" "matafuego_api" {
   provider = cloudflare.puntoco2
   zone_id  = var.puntoco2_cloudflare_zone_id
   name     = var.matafuego_api_hostname
-  content  = "${cloudflare_zero_trust_tunnel_cloudflared.matafuego_api.id}.cfargotunnel.com"
-  type     = "CNAME"
-  proxied  = true
-}
-
-resource "cloudflare_record" "matafuego_app" {
-  count    = var.manage_dns ? 1 : 0
-  provider = cloudflare.puntoco2
-  zone_id  = var.puntoco2_cloudflare_zone_id
-  name     = var.matafuego_app_hostname
   content  = "${cloudflare_zero_trust_tunnel_cloudflared.matafuego_api.id}.cfargotunnel.com"
   type     = "CNAME"
   proxied  = true
