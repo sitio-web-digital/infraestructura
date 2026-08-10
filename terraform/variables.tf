@@ -172,3 +172,21 @@ variable "matafuego_backend_port" {
   type        = number
   default     = 4001
 }
+
+variable "matafuego_app_hostname" {
+  description = "Hostname de la app en sí (login, dashboard) — mismo servicio Next.js que matafuego_api_hostname (un solo repo, front+API juntos), solo que con el nombre que van a usar los usuarios finales en vez del técnico."
+  type        = string
+  default     = "app.puntoco2.com"
+}
+
+variable "matafuego_frontend_hostname" {
+  description = "Hostname de la landing/marketing de puntoco2.com (zona apex, repo aparte del backend) — todavía no tiene nada corriendo en matafuego_frontend_port, se deja preparado el ingress/DNS de antemano."
+  type        = string
+  default     = "puntoco2.com"
+}
+
+variable "matafuego_frontend_port" {
+  description = "Puerto local (en la instancia) donde va a escuchar la landing de Matafuego una vez desplegada. Distinto de frontend_host_port (8081, sitio web)."
+  type        = number
+  default     = 8082
+}
