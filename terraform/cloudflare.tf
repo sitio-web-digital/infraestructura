@@ -132,12 +132,16 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "matafuego_api" {
   }
 }
 
-# Cuarto túnel: la landing de puntoco2.com (repo aparte, todavía sin
-# desplegar). Se prepara el túnel/ingress/DNS ahora para que cuando el sitio
-# exista, desplegarlo sea solo levantar un contenedor en matafuego_frontend_port
-# — sin tocar Cloudflare de nuevo. cloudflared va a correr igual (systemd,
-# ver ansible/roles/cloudflared) devolviendo 502 hasta que algo escuche ahí,
-# mismo bootstrapping que tuvieron frontend/api de sitio web al principio.
+# Cuarto túnel: puntoco2.com como dominio único, ruteado por PATH en vez de
+# por subdominio — decisión tomada después de armar app.puntoco2.com como
+# hostname aparte (ver más arriba): en vez de eso, /home* (y cualquier otra
+# ruta de la landing que se agregue ahí) va al sitio de marketing (repo
+# aparte, todavía sin desplegar) y TODO lo demás (incluido /login, que es
+# la entrada real de la app) cae en el backend de Matafuego ya desplegado
+# — mismo puerto que usan api.puntoco2.com/app.puntoco2.com, que se dejaron
+# como están por si sirven para uso técnico. cloudflared ya evalúa las
+# ingress_rule en orden y usa la primera que matchea (path antes que el
+# catch-all), así que el orden de los bloques de abajo importa.
 resource "random_id" "tunnel_secret_matafuego_frontend" {
   byte_length = 35
 }
@@ -156,9 +160,21 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "matafuego_frontend" 
   tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.matafuego_frontend.id
 
   config {
+    # La landing (repo aparte, todavía sin desplegar) — solo lo que cuelga
+    # de /home. Se prepara el ingress ahora para que cuando el sitio exista,
+    # desplegarlo sea solo levantar un contenedor en matafuego_frontend_port,
+    # sin tocar Cloudflare de nuevo (mismo bootstrapping que tuvieron
+    # frontend/api de sitio web al principio: 502 hasta que algo escuche).
     ingress_rule {
       hostname = var.matafuego_frontend_hostname
+      path     = "^/home(/.*)?$"
       service  = "http://localhost:${var.matafuego_frontend_port}"
+    }
+    # Todo lo demás en puntoco2.com (incluido /login y la raíz) es la app
+    # de Matafuego ya desplegada — mismo servicio que app.puntoco2.com.
+    ingress_rule {
+      hostname = var.matafuego_frontend_hostname
+      service  = "http://localhost:${var.matafuego_backend_port}"
     }
     ingress_rule {
       service = "http_status:404"

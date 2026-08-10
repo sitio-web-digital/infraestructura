@@ -180,7 +180,7 @@ variable "matafuego_app_hostname" {
 }
 
 variable "matafuego_frontend_hostname" {
-  description = "Hostname de la landing/marketing de puntoco2.com (zona apex, repo aparte del backend) — todavía no tiene nada corriendo en matafuego_frontend_port, se deja preparado el ingress/DNS de antemano."
+  description = "Dominio único de Matafuego (zona apex) — /home* rutea a la landing (repo aparte, todavía sin desplegar en matafuego_frontend_port) y todo lo demás (incluido /login) a la app ya desplegada, ver el ingress en cloudflare.tf."
   type        = string
   default     = "puntoco2.com"
 }
