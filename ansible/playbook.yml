@@ -30,6 +30,6 @@
     - postgres
     - github_runner
     - cloudflared
-    - backend_env
+    - { role: backend_env, tags: backend_env }
     - matafuego_postgres
     - matafuego_env

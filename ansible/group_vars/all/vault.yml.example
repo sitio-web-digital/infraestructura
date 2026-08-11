@@ -26,9 +26,18 @@ vault_jwt_secret: "generá-un-secret-random-fuerte-aca"
 
 # --- Mercado Pago (server/src/utils/mercadopago.js) ---
 # https://www.mercadopago.com.ar/developers/panel > Tus integraciones
+# Cuenta REAL (producción) — vault_mp_access_token_test guarda el token de
+# la app de sandbox (vendedor de prueba) solo para poder volver atrás rápido.
 vault_mp_access_token: ""
+vault_mp_access_token_test: ""
 vault_mp_webhook_secret: ""
+vault_mp_webhook_secret_test: ""
 vault_mp_preapproval_plan_id: ""
+# No usados por ningún código todavía (ver comentario en backend.env.j2) —
+# guardados para un futuro flujo con SDK/Bricks del lado del frontend.
+vault_mp_public_key: ""
+vault_mp_client_id: ""
+vault_mp_client_secret: ""
 
 # --- Cloudflare (para automatización de DNS FUTURA del backend — no es lo
 #     mismo que el token que usa terraform/ para crear los túneles, aunque

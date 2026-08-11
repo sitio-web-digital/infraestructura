@@ -48,11 +48,11 @@ root_domain: "sitioweb.digital" # arma los links de sitio (subdominio.dominio) e
 
 # --- Mails transaccionales (ver server/src/utils/mail.js) ---
 mail_from: "SitioWeb Digital <no-reply@sitioweb.digital>"
-# Manda TODO mail real acá, sin importar el destinatario — sacar esta
-# variable (y el ENV correspondiente en backend_env.j2) cuando se apruebe
-# el acceso de producción de SES y se quiera mandar a los clientes de
-# verdad, no solo probar.
-mail_override_to: "facundo_dg10@hotmail.com"
+# El acceso de producción de SES ya se aprobó (2026-08-10) — MAIL_OVERRIDE_TO
+# (que redirigía TODO mail real a una sola casilla, sin importar el
+# destinatario) se sacó del backend.env.j2 a propósito. Los mails de
+# cuentas de prueba de Mercado Pago (@testuser.com) se siguen redirigiendo
+# solos — ver TEST_BUYER_REDIRECT_TO en mail.js, eso no depende de esta var.
 
 # --- cloudflared ---
 cloudflared_version: "2024.10.0" # revisar la última en https://github.com/cloudflare/cloudflared/releases
