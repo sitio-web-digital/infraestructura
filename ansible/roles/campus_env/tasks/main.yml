@@ -6,6 +6,21 @@
 # necesita poder ABRIR el archivo directo, no solo que el daemon (root)
 # pueda leerlo. group=github_runner_user + 0640 es el mínimo que sigue sin
 # exponerlo a cualquier otro usuario de la máquina.
+#
+# El directorio de datos (SQLite + facturas subidas) SÍ hay que crearlo acá
+# a propósito: /opt/sitioweb es root:root 0755, así que el proceso del
+# workflow (corriendo como github_runner_user, sin permiso de escritura ahí)
+# no puede crear una carpeta nueva por su cuenta — falló así la primera vez
+# (2026-08-14). El daemon de Docker (root) sí puede montarla igual una vez
+# que existe, sea quien sea el dueño de adentro.
+- name: Crear {{ campus_data_dir }}
+  ansible.builtin.file:
+    path: "{{ campus_data_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
 - name: Generar {{ campus_env_path }}
   ansible.builtin.template:
     src: campus.env.j2
