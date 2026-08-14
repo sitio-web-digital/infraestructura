@@ -50,3 +50,14 @@ output "cloudflare_tunnel_token_matafuego_api" {
   sensitive   = true
 }
 
+output "cloudflare_tunnel_id_campus" {
+  description = "ID del túnel de Campus C4D — ver campus_backend_port para el puerto."
+  value       = cloudflare_zero_trust_tunnel_cloudflared.campus.id
+}
+
+output "cloudflare_tunnel_token_campus" {
+  description = "Token para `cloudflared service install <token>` del túnel de Campus."
+  value       = local.tunnel_token_campus
+  sensitive   = true
+}
+

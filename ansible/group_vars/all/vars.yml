@@ -8,6 +8,7 @@ github_runner_repos:
   - sitio-web-digital/frontend-sitio-web-digital
   - sitio-web-digital/backend-sitio-web-digital
   - sitio-web-digital/backend-puntoCO2
+  - sitio-web-digital/campus
 github_runner_version: "2.321.0" # revisar la última en https://github.com/actions/runner/releases
 github_runner_labels: "self-hosted,linux,x64,aws"
 github_runner_user: github-runner
@@ -69,6 +70,8 @@ cloudflared_tunnels:
     token: "{{ vault_cloudflare_tunnel_token_api }}"
   - name: matafuego-api
     token: "{{ vault_cloudflare_tunnel_token_matafuego_api }}"
+  - name: campus
+    token: "{{ vault_cloudflare_tunnel_token_campus }}"
 
 # --- Matafuego SaaS (puntoco2.com) — segunda app en la misma instancia -----
 # Mismo patrón que el backend de sitio web (roles/backend_env), pero en su
@@ -84,3 +87,14 @@ matafuego_db_compose_dir: "{{ app_root }}/matafuego-db"
 matafuego_db_host_port: 5436
 matafuego_db_user: matafuego
 matafuego_db_name: matafuego_saas
+
+# --- Campus C4D (campus.cloudfordeploy.com) — tercera app en la misma
+# instancia. A diferencia de sitio web/Matafuego, es un monolito Node +
+# SQLite (better-sqlite3) — sin Postgres ni contenedor de base de datos
+# propio: todo el estado (SQLite + facturas subidas) vive en un directorio
+# del host montado como volumen (ver roles/campus_env y el workflow
+# deploy-backend.yml del propio repo).
+campus_app_name: campus
+campus_backend_port: 3000
+campus_env_path: "{{ app_root }}/campus.env" # mismo path que espera campus/.github/workflows/deploy-backend.yml
+campus_data_dir: "{{ app_root }}/campus-data" # ídem DATA_DIR de ese workflow

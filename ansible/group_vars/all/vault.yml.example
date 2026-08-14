@@ -51,6 +51,7 @@ vault_cloudflare_account_id: ""
 vault_cloudflare_tunnel_token_frontend: ""
 vault_cloudflare_tunnel_token_api: ""
 vault_cloudflare_tunnel_token_matafuego_api: ""
+vault_cloudflare_tunnel_token_campus: ""
 
 # --- Matafuego SaaS (puntoco2.com) ---
 # Contraseña del rol admin/migrate de Postgres (POSTGRES_PASSWORD del
@@ -63,3 +64,10 @@ vault_matafuego_db_password: "generá-una-contraseña-fuerte-aca"
 vault_matafuego_app_user_password: "generá-una-contraseña-fuerte-aca"
 # Secret de sesión (AUTH_SECRET). Generar con: openssl rand -base64 32
 vault_matafuego_auth_secret: "generá-un-secret-random-fuerte-aca"
+
+# --- Campus C4D (campus.cloudfordeploy.com) ---
+# Solo importan en el PRIMER arranque (cuando data/ todavía no tiene ningún
+# admin creado) — ver README del repo campus. Arranques siguientes los
+# ignoran, aunque no hace daño dejarlos cargados acá.
+vault_campus_admin_email: "admin@cloudfordeploy.com"
+vault_campus_admin_password: "generá-una-contraseña-fuerte-aca"

@@ -87,6 +87,39 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "api" {
   }
 }
 
+# --- Campus C4D (campus.cloudfordeploy.com) ---------------------------------
+# Mismo patrón que "api" — su propio túnel/servicio systemd
+# (cloudflared-campus, ver ansible/roles/cloudflared) en la MISMA instancia,
+# sin pisar los otros túneles. Usa el provider default (cuenta, no zona) —
+# cloudfordeploy.com es la zona compartida con otros proyectos, así que acá
+# NO hay ningún cloudflare_record: el CNAME se carga a mano (ver variables.tf).
+
+resource "random_id" "tunnel_secret_campus" {
+  byte_length = 35
+}
+
+resource "cloudflare_zero_trust_tunnel_cloudflared" "campus" {
+  account_id = var.cloudflare_account_id
+  name       = "${local.name}-campus"
+  secret     = random_id.tunnel_secret_campus.b64_std
+  config_src = "cloudflare"
+}
+
+resource "cloudflare_zero_trust_tunnel_cloudflared_config" "campus" {
+  account_id = var.cloudflare_account_id
+  tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.campus.id
+
+  config {
+    ingress_rule {
+      hostname = var.campus_hostname
+      service  = "http://localhost:${var.campus_backend_port}"
+    }
+    ingress_rule {
+      service = "http_status:404"
+    }
+  }
+}
+
 # --- Matafuego SaaS (puntoco2.com) ------------------------------------------
 # Tercer túnel, mismo patrón que "api" — su propio servicio systemd
 # (cloudflared-matafuego-api, ver ansible/roles/cloudflared) corriendo en la
@@ -158,6 +191,11 @@ locals {
     a = var.cloudflare_account_id
     t = cloudflare_zero_trust_tunnel_cloudflared.matafuego_api.id
     s = random_id.tunnel_secret_matafuego_api.b64_std
+  }))
+  tunnel_token_campus = base64encode(jsonencode({
+    a = var.cloudflare_account_id
+    t = cloudflare_zero_trust_tunnel_cloudflared.campus.id
+    s = random_id.tunnel_secret_campus.b64_std
   }))
 }
 

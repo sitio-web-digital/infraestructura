@@ -140,6 +140,28 @@ variable "mp_back_url_hostname" {
 }
 
 # ---------------------------------------------------------------------------
+# Campus C4D (campus.cloudfordeploy.com) — panel comercial interno, otra app
+# más en la MISMA instancia. cloudfordeploy.com es la zona compartida con
+# otros proyectos (ver mp_back_url_hostname arriba) — por eso NO hay acá una
+# variable de zone_id ni un recurso cloudflare_record: el túnel se crea por
+# Terraform (es account-level, no toca ninguna zona), pero el CNAME de
+# campus.cloudfordeploy.com se carga a mano en el dashboard de Cloudflare,
+# mismo criterio que se usó siempre para esta zona compartida.
+# ---------------------------------------------------------------------------
+
+variable "campus_hostname" {
+  description = "Hostname del panel comercial C4D (Node + SQLite, un solo contenedor)."
+  type        = string
+  default     = "campus.cloudfordeploy.com"
+}
+
+variable "campus_backend_port" {
+  description = "Puerto local (en la instancia) donde escucha Campus. Distinto de backend_port/matafuego_backend_port porque los tres contenedores corren con --network host en la misma máquina."
+  type        = number
+  default     = 3000
+}
+
+# ---------------------------------------------------------------------------
 # Matafuego SaaS (puntoco2.com) — segunda app en la MISMA instancia
 # ---------------------------------------------------------------------------
 # Comparte cuenta de Cloudflare con sitioweb.digital (misma cloudflare_account_id

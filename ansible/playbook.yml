@@ -3,12 +3,14 @@
 # que tenía el runner viejo: Docker, Postgres (docker-compose), el runner de
 # GitHub Actions (uno por repo) y los túneles de Cloudflare. Los workflows de
 # deploy de cada repo (deploy-frontend.yml / deploy-backend.yml, uno por
-# repo — frontend, backend y ahora también backend-puntoCO2/Matafuego) hacen
-# el resto en cada push a develop — este playbook no construye ni corre las
-# imágenes de la app, solo prepara la máquina para que el runner pueda
-# hacerlo. matafuego_postgres/matafuego_env agregan la segunda app
-# (Matafuego SaaS, puntoco2.com) a la MISMA instancia, sin tocar nada de lo
-# que ya corre para sitio web.
+# repo — frontend, backend y ahora también backend-puntoCO2/Matafuego y
+# campus) hacen el resto en cada push a develop (o main, en el caso de
+# campus) — este playbook no construye ni corre las imágenes de la app, solo
+# prepara la máquina para que el runner pueda hacerlo. matafuego_postgres/
+# matafuego_env agregan la segunda app (Matafuego SaaS, puntoco2.com) a la
+# MISMA instancia; campus_env agrega la tercera (Campus C4D,
+# campus.cloudfordeploy.com) — sin tocar nada de lo que ya corre para las
+# otras dos.
 #
 # Uso: ver README.md, sección "Bootstrap de punta a punta".
 
@@ -33,3 +35,4 @@
     - { role: backend_env, tags: backend_env }
     - matafuego_postgres
     - matafuego_env
+    - { role: campus_env, tags: campus_env }

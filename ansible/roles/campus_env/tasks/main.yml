@@ -1,0 +1,16 @@
+---
+# Mismo patrón que roles/backend_env y roles/matafuego_env, para la tercera
+# app (Campus C4D). `docker run --env-file` lo lee el CLIENTE de docker (el
+# proceso `docker run`, corriendo como github_runner_user vía
+# deploy-backend.yml del repo campus) — no pasa un path al daemon, así que
+# necesita poder ABRIR el archivo directo, no solo que el daemon (root)
+# pueda leerlo. group=github_runner_user + 0640 es el mínimo que sigue sin
+# exponerlo a cualquier otro usuario de la máquina.
+- name: Generar {{ campus_env_path }}
+  ansible.builtin.template:
+    src: campus.env.j2
+    dest: "{{ campus_env_path }}"
+    owner: root
+    group: "{{ github_runner_user }}"
+    mode: "0640"
+  no_log: true
