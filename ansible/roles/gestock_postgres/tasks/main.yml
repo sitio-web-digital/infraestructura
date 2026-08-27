@@ -1,0 +1,51 @@
+---
+# Cuarta base de datos en la misma instancia, para Gestock — contenedor,
+# volumen y puerto (5437) propios, sin tocar nada de los otros Postgres.
+# El schema lo crea `npm run migrate` del propio repo (ver
+# files/gestock-db/docker-compose.yml), no un init.sql — por eso este role
+# no tiene el paso de "solo importa la primera vez" que sí tiene roles/postgres.
+
+- name: Crear {{ gestock_db_compose_dir }}
+  ansible.builtin.file:
+    path: "{{ gestock_db_compose_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Copiar docker-compose.yml de la base de datos de Gestock
+  ansible.builtin.copy:
+    src: gestock-db/docker-compose.yml
+    dest: "{{ gestock_db_compose_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+  register: gestock_db_compose_file
+
+- name: Generar gestock-db/.env con las credenciales (no queda en el docker-compose.yml)
+  ansible.builtin.template:
+    src: db.env.j2
+    dest: "{{ gestock_db_compose_dir }}/.env"
+    owner: root
+    group: root
+    mode: "0600"
+  register: gestock_db_env_file
+  no_log: true
+
+- name: Levantar (o recrear) el contenedor de Postgres de Gestock
+  community.docker.docker_compose_v2:
+    project_src: "{{ gestock_db_compose_dir }}"
+    state: present
+    pull: missing
+  register: gestock_db_compose_up
+
+- name: Esperar a que Postgres de Gestock esté healthy
+  ansible.builtin.command:
+    cmd: >-
+      docker inspect --format='{{ '{{' }}.State.Health.Status{{ '}}' }}'
+      gestock-db
+  register: gestock_db_health
+  changed_when: false
+  until: gestock_db_health.stdout == "healthy"
+  retries: 12
+  delay: 5

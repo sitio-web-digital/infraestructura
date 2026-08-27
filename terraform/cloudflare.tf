@@ -120,6 +120,40 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "campus" {
   }
 }
 
+# --- Gestock (stock.cloudfordeploy.com) -------------------------------------
+# Cuarto túnel, mismo patrón que "campus" — su propio servicio systemd
+# (cloudflared-stock, ver ansible/roles/cloudflared) corriendo en la MISMA
+# instancia que sitio web/Matafuego/Campus, sin pisar nada de los otros
+# túneles. Usa el provider default (cuenta, no zona) — cloudfordeploy.com es
+# la zona compartida con otros proyectos, así que acá NO hay ningún
+# cloudflare_record: el CNAME se carga a mano (ver variables.tf).
+
+resource "random_id" "tunnel_secret_stock" {
+  byte_length = 35
+}
+
+resource "cloudflare_zero_trust_tunnel_cloudflared" "stock" {
+  account_id = var.cloudflare_account_id
+  name       = "${local.name}-stock"
+  secret     = random_id.tunnel_secret_stock.b64_std
+  config_src = "cloudflare"
+}
+
+resource "cloudflare_zero_trust_tunnel_cloudflared_config" "stock" {
+  account_id = var.cloudflare_account_id
+  tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.stock.id
+
+  config {
+    ingress_rule {
+      hostname = var.stock_hostname
+      service  = "http://localhost:${var.stock_backend_port}"
+    }
+    ingress_rule {
+      service = "http_status:404"
+    }
+  }
+}
+
 # --- Matafuego SaaS (puntoco2.com) ------------------------------------------
 # Tercer túnel, mismo patrón que "api" — su propio servicio systemd
 # (cloudflared-matafuego-api, ver ansible/roles/cloudflared) corriendo en la
@@ -196,6 +230,11 @@ locals {
     a = var.cloudflare_account_id
     t = cloudflare_zero_trust_tunnel_cloudflared.campus.id
     s = random_id.tunnel_secret_campus.b64_std
+  }))
+  tunnel_token_stock = base64encode(jsonencode({
+    a = var.cloudflare_account_id
+    t = cloudflare_zero_trust_tunnel_cloudflared.stock.id
+    s = random_id.tunnel_secret_stock.b64_std
   }))
 }
 

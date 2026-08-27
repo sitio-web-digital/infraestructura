@@ -9,8 +9,9 @@
 # prepara la máquina para que el runner pueda hacerlo. matafuego_postgres/
 # matafuego_env agregan la segunda app (Matafuego SaaS, puntoco2.com) a la
 # MISMA instancia; campus_env agrega la tercera (Campus C4D,
-# campus.cloudfordeploy.com) — sin tocar nada de lo que ya corre para las
-# otras dos.
+# campus.cloudfordeploy.com); gestock_postgres/gestock_env agregan la cuarta
+# (Gestock, stock.cloudfordeploy.com) — sin tocar nada de lo que ya corre
+# para las otras tres.
 #
 # Uso: ver README.md, sección "Bootstrap de punta a punta".
 
@@ -36,3 +37,5 @@
     - matafuego_postgres
     - matafuego_env
     - { role: campus_env, tags: campus_env }
+    - gestock_postgres
+    - { role: gestock_env, tags: gestock_env }
