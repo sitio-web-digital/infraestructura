@@ -9,6 +9,7 @@ github_runner_repos:
   - sitio-web-digital/backend-sitio-web-digital
   - sitio-web-digital/backend-puntoCO2
   - sitio-web-digital/campus
+  - sitio-web-digital/gestock-app
 github_runner_version: "2.321.0" # revisar la última en https://github.com/actions/runner/releases
 github_runner_labels: "self-hosted,linux,x64,aws"
 github_runner_user: github-runner
@@ -72,6 +73,8 @@ cloudflared_tunnels:
     token: "{{ vault_cloudflare_tunnel_token_matafuego_api }}"
   - name: campus
     token: "{{ vault_cloudflare_tunnel_token_campus }}"
+  - name: stock
+    token: "{{ vault_cloudflare_tunnel_token_stock }}"
 
 # --- Matafuego SaaS (puntoco2.com) — segunda app en la misma instancia -----
 # Mismo patrón que el backend de sitio web (roles/backend_env), pero en su
@@ -98,3 +101,16 @@ campus_app_name: campus
 campus_backend_port: 3000
 campus_env_path: "{{ app_root }}/campus.env" # mismo path que espera campus/.github/workflows/deploy-backend.yml
 campus_data_dir: "{{ app_root }}/campus-data" # ídem DATA_DIR de ese workflow
+
+# --- Gestock (stock.cloudfordeploy.com) — cuarta app en la misma instancia -
+# Control de stock genérico (Node + Fastify + Postgres). Un solo contenedor
+# sirve la API (/api/*) y el frontend estático (web/app.html) al mismo
+# tiempo (ver server/src/index.ts del repo), por eso un solo puerto/túnel,
+# igual que Campus — pero con Postgres propio (como Matafuego), no SQLite.
+gestock_app_name: gestock-app # nombre de imagen/contenedor que usa deploy-backend.yml del repo
+gestock_backend_port: 4002
+gestock_env_path: "{{ app_root }}/gestock.env" # mismo path que espera gestock-app/.github/workflows/deploy-backend.yml
+gestock_db_compose_dir: "{{ app_root }}/gestock-db"
+gestock_db_host_port: 5437
+gestock_db_user: gestock
+gestock_db_name: gestock

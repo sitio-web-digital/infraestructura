@@ -52,6 +52,7 @@ vault_cloudflare_tunnel_token_frontend: ""
 vault_cloudflare_tunnel_token_api: ""
 vault_cloudflare_tunnel_token_matafuego_api: ""
 vault_cloudflare_tunnel_token_campus: ""
+vault_cloudflare_tunnel_token_stock: ""
 
 # --- Matafuego SaaS (puntoco2.com) ---
 # Contraseña del rol admin/migrate de Postgres (POSTGRES_PASSWORD del
@@ -71,3 +72,15 @@ vault_matafuego_auth_secret: "generá-un-secret-random-fuerte-aca"
 # ignoran, aunque no hace daño dejarlos cargados acá.
 vault_campus_admin_email: "admin@cloudfordeploy.com"
 vault_campus_admin_password: "generá-una-contraseña-fuerte-aca"
+
+# --- Gestock (stock.cloudfordeploy.com) ---
+# Contraseña del rol de Postgres propio (POSTGRES_PASSWORD del contenedor
+# gestock-db, y lo que usa DATABASE_URL).
+vault_gestock_db_password: "generá-una-contraseña-fuerte-aca"
+# Generar con: openssl rand -base64 48
+vault_gestock_jwt_secret: "generá-un-secret-random-fuerte-aca"
+# Solo importan la primera vez que corre `npm run migrate` contra la base
+# (cuando todavía no existe ningún usuario con rol superadmin) — ver
+# server/src/migrate.ts del repo gestock-app. Corridas siguientes los ignoran.
+vault_gestock_superadmin_email: "admin@sitioweb.digital"
+vault_gestock_superadmin_password: "generá-una-contraseña-fuerte-aca"

@@ -200,3 +200,26 @@ variable "matafuego_frontend_hostname" {
   type        = string
   default     = "puntoco2.com"
 }
+
+# ---------------------------------------------------------------------------
+# Gestock (stock.cloudfordeploy.com) — cuarta app en la MISMA instancia.
+# Mismo criterio que Campus: cloudfordeploy.com es la zona compartida (ver
+# campus_hostname más arriba), así que acá tampoco hay una variable de
+# zone_id ni un recurso cloudflare_record — el túnel se crea por Terraform,
+# pero el CNAME de stock.cloudfordeploy.com se carga a mano en el dashboard
+# de Cloudflare. Un solo contenedor sirve API (/api/*) y frontend estático
+# al mismo tiempo (ver server/src/index.ts del repo gestock-app), por eso
+# un solo hostname/puerto/túnel, igual que Campus.
+# ---------------------------------------------------------------------------
+
+variable "stock_hostname" {
+  description = "Hostname del sistema de control de stock (Node + Fastify + Postgres, un solo contenedor sirve API y frontend)."
+  type        = string
+  default     = "stock.cloudfordeploy.com"
+}
+
+variable "stock_backend_port" {
+  description = "Puerto local (en la instancia) donde escucha Gestock. Distinto de los otros tres (4000/4001/3000) porque los cuatro contenedores corren con --network host en la misma máquina."
+  type        = number
+  default     = 4002
+}

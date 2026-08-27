@@ -61,3 +61,14 @@ output "cloudflare_tunnel_token_campus" {
   sensitive   = true
 }
 
+output "cloudflare_tunnel_id_stock" {
+  description = "ID del túnel de Gestock (control de stock) — ver stock_backend_port para el puerto."
+  value       = cloudflare_zero_trust_tunnel_cloudflared.stock.id
+}
+
+output "cloudflare_tunnel_token_stock" {
+  description = "Token para `cloudflared service install <token>` del túnel de Gestock."
+  value       = local.tunnel_token_stock
+  sensitive   = true
+}
+

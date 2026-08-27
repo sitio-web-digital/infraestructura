@@ -1,0 +1,27 @@
+# Mismo patrón que roles/matafuego_postgres (matafuego-db): contenedor,
+# volumen y puerto propios, sin tocar nada de los otros Postgres de la
+# instancia (sitiowebdigital-db en 5435, matafuego-db en 5436). El schema lo
+# crea `npm run migrate` (server/src/migrate.ts del repo gestock-app) contra
+# esta base — no un init.sql, por eso este role no tiene el paso de "solo
+# importa la primera vez" que sí tiene roles/postgres.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: gestock-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_DB: "${POSTGRES_DB}"
+    ports:
+      - "${POSTGRES_HOST_PORT}:5432"
+    volumes:
+      - gestock_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  gestock_pgdata:

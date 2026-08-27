@@ -22,12 +22,14 @@ FRONTEND_TOKEN="$(cd terraform && terraform output -raw cloudflare_tunnel_token_
 API_TOKEN="$(cd terraform && terraform output -raw cloudflare_tunnel_token_api)"
 MATAFUEGO_API_TOKEN="$(cd terraform && terraform output -raw cloudflare_tunnel_token_matafuego_api)"
 CAMPUS_TOKEN="$(cd terraform && terraform output -raw cloudflare_tunnel_token_campus)"
+STOCK_TOKEN="$(cd terraform && terraform output -raw cloudflare_tunnel_token_stock)"
 
 sed -i \
   -e "s|^vault_cloudflare_tunnel_token_frontend:.*|vault_cloudflare_tunnel_token_frontend: \"${FRONTEND_TOKEN}\"|" \
   -e "s|^vault_cloudflare_tunnel_token_api:.*|vault_cloudflare_tunnel_token_api: \"${API_TOKEN}\"|" \
   -e "s|^vault_cloudflare_tunnel_token_matafuego_api:.*|vault_cloudflare_tunnel_token_matafuego_api: \"${MATAFUEGO_API_TOKEN}\"|" \
   -e "s|^vault_cloudflare_tunnel_token_campus:.*|vault_cloudflare_tunnel_token_campus: \"${CAMPUS_TOKEN}\"|" \
+  -e "s|^vault_cloudflare_tunnel_token_stock:.*|vault_cloudflare_tunnel_token_stock: \"${STOCK_TOKEN}\"|" \
   "$VAULT_FILE"
 
 echo "Tokens de los túneles copiados a $VAULT_FILE."
