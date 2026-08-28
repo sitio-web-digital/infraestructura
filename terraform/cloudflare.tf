@@ -66,6 +66,16 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "frontend" {
       hostname = var.mp_back_url_hostname
       service  = "http://localhost:8081"
     }
+    # Landing de muestra para un cliente puntual (Ecogonzalez) — un
+    # contenedor nginx suelto en el puerto 8082, corrido a mano en la
+    # instancia (no es una app real, no tiene role de Ansible ni deploy
+    # propio). Reusa el túnel de frontend en vez de crear uno nuevo
+    # porque es solo HTML estático de muestra; sacar esta regla (y el
+    # contenedor) cuando ya no haga falta.
+    ingress_rule {
+      hostname = "ecogonzalez.cloudfordeploy.com"
+      service  = "http://localhost:8082"
+    }
     ingress_rule {
       service = "http_status:404"
     }
