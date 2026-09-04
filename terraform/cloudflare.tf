@@ -164,6 +164,40 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "stock" {
   }
 }
 
+# --- Farmacias del Sur (farmaciasdelsur.sitioweb.digital) -------------------
+# Quinto túnel, mismo patrón que "api" — su propio servicio systemd
+# (cloudflared-farmacia, ver ansible/roles/cloudflared) corriendo en la
+# MISMA instancia, sin pisar nada de los otros túneles. A diferencia de
+# Campus/Gestock, vive en el dominio PROPIO (sitioweb.digital) — usa el
+# provider default (mismo que app/api/customer_wildcard) y SÍ tiene un
+# cloudflare_record acá abajo, gateado por manage_dns.
+
+resource "random_id" "tunnel_secret_farmacia" {
+  byte_length = 35
+}
+
+resource "cloudflare_zero_trust_tunnel_cloudflared" "farmacia" {
+  account_id = var.cloudflare_account_id
+  name       = "${local.name}-farmacia"
+  secret     = random_id.tunnel_secret_farmacia.b64_std
+  config_src = "cloudflare"
+}
+
+resource "cloudflare_zero_trust_tunnel_cloudflared_config" "farmacia" {
+  account_id = var.cloudflare_account_id
+  tunnel_id  = cloudflare_zero_trust_tunnel_cloudflared.farmacia.id
+
+  config {
+    ingress_rule {
+      hostname = var.farmacia_hostname
+      service  = "http://localhost:${var.farmacia_backend_port}"
+    }
+    ingress_rule {
+      service = "http_status:404"
+    }
+  }
+}
+
 # --- Matafuego SaaS (puntoco2.com) ------------------------------------------
 # Tercer túnel, mismo patrón que "api" — su propio servicio systemd
 # (cloudflared-matafuego-api, ver ansible/roles/cloudflared) corriendo en la
@@ -246,6 +280,11 @@ locals {
     t = cloudflare_zero_trust_tunnel_cloudflared.stock.id
     s = random_id.tunnel_secret_stock.b64_std
   }))
+  tunnel_token_farmacia = base64encode(jsonencode({
+    a = var.cloudflare_account_id
+    t = cloudflare_zero_trust_tunnel_cloudflared.farmacia.id
+    s = random_id.tunnel_secret_farmacia.b64_std
+  }))
 }
 
 # --- DNS (opcional, ver variable manage_dns) --------------------------------
@@ -278,6 +317,15 @@ resource "cloudflare_record" "api" {
   zone_id = var.cloudflare_zone_id
   name    = var.api_hostname
   content = "${cloudflare_zero_trust_tunnel_cloudflared.api.id}.cfargotunnel.com"
+  type    = "CNAME"
+  proxied = true
+}
+
+resource "cloudflare_record" "farmacia" {
+  count   = var.manage_dns ? 1 : 0
+  zone_id = var.cloudflare_zone_id
+  name    = var.farmacia_hostname
+  content = "${cloudflare_zero_trust_tunnel_cloudflared.farmacia.id}.cfargotunnel.com"
   type    = "CNAME"
   proxied = true
 }

@@ -223,3 +223,23 @@ variable "stock_backend_port" {
   type        = number
   default     = 4002
 }
+
+# ---------------------------------------------------------------------------
+# Farmacias del Sur (farmaciasdelsur.sitioweb.digital) — sexta app en la
+# MISMA instancia. A diferencia de Campus/Gestock/Matafuego, vive en el
+# dominio PROPIO (sitioweb.digital), no en la zona compartida
+# cloudfordeploy.com — por eso acá SÍ hay un cloudflare_record (ver
+# cloudflare.tf), gateado por manage_dns como app_hostname/api_hostname.
+# ---------------------------------------------------------------------------
+
+variable "farmacia_hostname" {
+  description = "Hostname del sistema de farmacias (Next.js + Prisma + Postgres, monolito, un solo contenedor)."
+  type        = string
+  default     = "farmaciasdelsur.sitioweb.digital"
+}
+
+variable "farmacia_backend_port" {
+  description = "Puerto local (en la instancia) donde escucha Farmacias del Sur. Distinto de los demás porque los contenedores corren con --network host en la misma máquina."
+  type        = number
+  default     = 4003
+}

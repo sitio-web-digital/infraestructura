@@ -10,6 +10,7 @@ github_runner_repos:
   - sitio-web-digital/backend-puntoCO2
   - sitio-web-digital/campus
   - sitio-web-digital/gestock-app
+  - sitio-web-digital/farmacia-monolito
 github_runner_version: "2.321.0" # revisar la última en https://github.com/actions/runner/releases
 github_runner_labels: "self-hosted,linux,x64,aws"
 github_runner_user: github-runner
@@ -75,6 +76,8 @@ cloudflared_tunnels:
     token: "{{ vault_cloudflare_tunnel_token_campus }}"
   - name: stock
     token: "{{ vault_cloudflare_tunnel_token_stock }}"
+  - name: farmacia
+    token: "{{ vault_cloudflare_tunnel_token_farmacia }}"
 
 # --- Matafuego SaaS (puntoco2.com) — segunda app en la misma instancia -----
 # Mismo patrón que el backend de sitio web (roles/backend_env), pero en su
@@ -114,3 +117,18 @@ gestock_db_compose_dir: "{{ app_root }}/gestock-db"
 gestock_db_host_port: 5437
 gestock_db_user: gestock
 gestock_db_name: gestock
+
+# --- Farmacias del Sur (farmaciasdelsur.sitioweb.digital) — quinta app en
+# la misma instancia. Monolito Next.js + Prisma + Postgres, mismo patrón de
+# dos roles de DB que Matafuego (rol admin para migraciones, rol app_user
+# de bajo privilegio para runtime con Row-Level Security) — a diferencia de
+# Matafuego/Gestock/Campus, vive en el dominio propio (sitioweb.digital),
+# no en la zona compartida cloudfordeploy.com, así que su registro DNS SÍ
+# lo administra Terraform (ver terraform/cloudflare.tf > farmacia).
+farmacia_app_name: farmacia-monolito # nombre de imagen/contenedor que usa deploy-backend.yml del repo
+farmacia_backend_port: 4003
+farmacia_env_path: "{{ app_root }}/farmacia.env" # mismo path que espera farmacia-monolito/.github/workflows/deploy-backend.yml
+farmacia_db_compose_dir: "{{ app_root }}/farmacia-db"
+farmacia_db_host_port: 5438
+farmacia_db_user: farmacias
+farmacia_db_name: farmacias_saas

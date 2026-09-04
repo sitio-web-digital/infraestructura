@@ -1,0 +1,50 @@
+---
+# Quinta base de datos en la misma instancia, para Farmacias del Sur —
+# contenedor, volumen y puerto (5438) propios, sin tocar nada de los otros
+# Postgres. El schema lo crea `prisma migrate deploy` (corrido por el
+# workflow de deploy del propio repo), no un init.sql.
+
+- name: Crear {{ farmacia_db_compose_dir }}
+  ansible.builtin.file:
+    path: "{{ farmacia_db_compose_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Copiar docker-compose.yml de la base de datos de Farmacias
+  ansible.builtin.copy:
+    src: farmacia-db/docker-compose.yml
+    dest: "{{ farmacia_db_compose_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+  register: farmacia_db_compose_file
+
+- name: Generar farmacia-db/.env con las credenciales (no queda en el docker-compose.yml)
+  ansible.builtin.template:
+    src: db.env.j2
+    dest: "{{ farmacia_db_compose_dir }}/.env"
+    owner: root
+    group: root
+    mode: "0600"
+  register: farmacia_db_env_file
+  no_log: true
+
+- name: Levantar (o recrear) el contenedor de Postgres de Farmacias
+  community.docker.docker_compose_v2:
+    project_src: "{{ farmacia_db_compose_dir }}"
+    state: present
+    pull: missing
+  register: farmacia_db_compose_up
+
+- name: Esperar a que Postgres de Farmacias esté healthy
+  ansible.builtin.command:
+    cmd: >-
+      docker inspect --format='{{ '{{' }}.State.Health.Status{{ '}}' }}'
+      farmacia-db
+  register: farmacia_db_health
+  changed_when: false
+  until: farmacia_db_health.stdout == "healthy"
+  retries: 12
+  delay: 5

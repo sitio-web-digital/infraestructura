@@ -53,6 +53,7 @@ vault_cloudflare_tunnel_token_api: ""
 vault_cloudflare_tunnel_token_matafuego_api: ""
 vault_cloudflare_tunnel_token_campus: ""
 vault_cloudflare_tunnel_token_stock: ""
+vault_cloudflare_tunnel_token_farmacia: ""
 
 # --- Matafuego SaaS (puntoco2.com) ---
 # Contraseña del rol admin/migrate de Postgres (POSTGRES_PASSWORD del
@@ -84,3 +85,16 @@ vault_gestock_jwt_secret: "generá-un-secret-random-fuerte-aca"
 # server/src/migrate.ts del repo gestock-app. Corridas siguientes los ignoran.
 vault_gestock_superadmin_email: "admin@sitioweb.digital"
 vault_gestock_superadmin_password: "generá-una-contraseña-fuerte-aca"
+
+# --- Farmacias del Sur (farmaciasdelsur.sitioweb.digital) ---
+# Contraseña del rol admin de Postgres (POSTGRES_PASSWORD del contenedor
+# farmacia-db, y lo que usa DATABASE_URL).
+vault_farmacia_db_password: "generá-una-contraseña-fuerte-aca"
+# Contraseña del rol de mínimo privilegio "app_user" (RUNTIME_DATABASE_URL) —
+# ese rol lo crea la migración `app_role_and_rls`, pero la contraseña hay
+# que fijársela a mano una vez (ALTER ROLE app_user WITH PASSWORD ...)
+# contra la base ya migrada, igual que con Matafuego.
+vault_farmacia_app_user_password: "generá-una-contraseña-fuerte-aca"
+# Generar con: openssl rand -base64 32 (mínimo 32 caracteres, lo valida
+# src/server/env.ts del repo)
+vault_farmacia_auth_secret: "generá-un-secret-random-fuerte-aca"
