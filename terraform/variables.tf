@@ -225,17 +225,18 @@ variable "stock_backend_port" {
 }
 
 # ---------------------------------------------------------------------------
-# Farmacias del Sur (farmaciasdelsur.sitioweb.digital) — sexta app en la
-# MISMA instancia. A diferencia de Campus/Gestock/Matafuego, vive en el
-# dominio PROPIO (sitioweb.digital), no en la zona compartida
-# cloudfordeploy.com — por eso acá SÍ hay un cloudflare_record (ver
-# cloudflare.tf), gateado por manage_dns como app_hostname/api_hostname.
+# Farmacias del Sur (farmaciasdelsur.cloudfordeploy.com) — sexta app en la
+# MISMA instancia. cloudfordeploy.com es la zona compartida con otros
+# proyectos (ver mp_back_url_hostname/campus_hostname arriba) — por eso NO
+# hay acá una variable de zone_id ni un recurso cloudflare_record: el túnel
+# se crea por Terraform, pero el CNAME se carga a mano en el dashboard de
+# Cloudflare, mismo criterio que Campus/Gestock.
 # ---------------------------------------------------------------------------
 
 variable "farmacia_hostname" {
   description = "Hostname del sistema de farmacias (Next.js + Prisma + Postgres, monolito, un solo contenedor)."
   type        = string
-  default     = "farmaciasdelsur.sitioweb.digital"
+  default     = "farmaciasdelsur.cloudfordeploy.com"
 }
 
 variable "farmacia_backend_port" {

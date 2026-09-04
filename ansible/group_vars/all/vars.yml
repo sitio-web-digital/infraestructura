@@ -118,13 +118,12 @@ gestock_db_host_port: 5437
 gestock_db_user: gestock
 gestock_db_name: gestock
 
-# --- Farmacias del Sur (farmaciasdelsur.sitioweb.digital) — quinta app en
+# --- Farmacias del Sur (farmaciasdelsur.cloudfordeploy.com) — quinta app en
 # la misma instancia. Monolito Next.js + Prisma + Postgres, mismo patrón de
 # dos roles de DB que Matafuego (rol admin para migraciones, rol app_user
-# de bajo privilegio para runtime con Row-Level Security) — a diferencia de
-# Matafuego/Gestock/Campus, vive en el dominio propio (sitioweb.digital),
-# no en la zona compartida cloudfordeploy.com, así que su registro DNS SÍ
-# lo administra Terraform (ver terraform/cloudflare.tf > farmacia).
+# de bajo privilegio para runtime con Row-Level Security). Vive en la zona
+# compartida cloudfordeploy.com (como Campus/Gestock) — el CNAME se carga
+# a mano en el dashboard de Cloudflare, no lo administra Terraform.
 farmacia_app_name: farmacia-monolito # nombre de imagen/contenedor que usa deploy-backend.yml del repo
 farmacia_backend_port: 4003
 farmacia_env_path: "{{ app_root }}/farmacia.env" # mismo path que espera farmacia-monolito/.github/workflows/deploy-backend.yml

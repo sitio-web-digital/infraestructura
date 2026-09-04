@@ -164,13 +164,13 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "stock" {
   }
 }
 
-# --- Farmacias del Sur (farmaciasdelsur.sitioweb.digital) -------------------
-# Quinto túnel, mismo patrón que "api" — su propio servicio systemd
-# (cloudflared-farmacia, ver ansible/roles/cloudflared) corriendo en la
-# MISMA instancia, sin pisar nada de los otros túneles. A diferencia de
-# Campus/Gestock, vive en el dominio PROPIO (sitioweb.digital) — usa el
-# provider default (mismo que app/api/customer_wildcard) y SÍ tiene un
-# cloudflare_record acá abajo, gateado por manage_dns.
+# --- Farmacias del Sur (farmaciasdelsur.cloudfordeploy.com) -----------------
+# Mismo patrón que "campus" — su propio túnel/servicio systemd
+# (cloudflared-farmacia, ver ansible/roles/cloudflared) en la MISMA
+# instancia, sin pisar los otros túneles. Usa el provider default (cuenta,
+# no zona) — cloudfordeploy.com es la zona compartida con otros proyectos,
+# así que acá NO hay ningún cloudflare_record: el CNAME se carga a mano
+# (ver variables.tf).
 
 resource "random_id" "tunnel_secret_farmacia" {
   byte_length = 35
@@ -317,15 +317,6 @@ resource "cloudflare_record" "api" {
   zone_id = var.cloudflare_zone_id
   name    = var.api_hostname
   content = "${cloudflare_zero_trust_tunnel_cloudflared.api.id}.cfargotunnel.com"
-  type    = "CNAME"
-  proxied = true
-}
-
-resource "cloudflare_record" "farmacia" {
-  count   = var.manage_dns ? 1 : 0
-  zone_id = var.cloudflare_zone_id
-  name    = var.farmacia_hostname
-  content = "${cloudflare_zero_trust_tunnel_cloudflared.farmacia.id}.cfargotunnel.com"
   type    = "CNAME"
   proxied = true
 }
