@@ -72,3 +72,14 @@ output "cloudflare_tunnel_token_stock" {
   sensitive   = true
 }
 
+output "cloudflare_tunnel_id_farmacia" {
+  description = "ID del túnel de Farmacias del Sur — ver farmacia_backend_port para el puerto."
+  value       = cloudflare_zero_trust_tunnel_cloudflared.farmacia.id
+}
+
+output "cloudflare_tunnel_token_farmacia" {
+  description = "Token para `cloudflared service install <token>` del túnel de Farmacias del Sur."
+  value       = local.tunnel_token_farmacia
+  sensitive   = true
+}
+
